@@ -1,5 +1,6 @@
 import 'package:flutter/services.dart';
-import '../../data/datasources/local/ffi_bridge.dart';
+
+import '../../core/engine/security_engine.dart';
 import '../notifications/notification_service.dart';
 
 class SMSMonitoringService {
@@ -14,24 +15,23 @@ class SMSMonitoringService {
 
   Future<void> _onSMSEvent(dynamic event) async {
     if (event is! Map) return;
-    final sender  = event['sender']  as String? ?? '';
-    final body    = event['body']    as String? ?? '';
-    final hasUrl  = event['hasUrl']  as bool?   ?? false;
-    final url     = event['url']     as String? ?? '';
+    final sender   = event['sender']      as String? ?? '';
+    final body     = event['body']        as String? ?? '';
+    final hasUrl   = event['containsUrl'] as bool?   ?? false;
+    final url      = event['url']         as String? ?? '';
 
-    final result = FFIBridge.instance.analyzeSms(
-      sender:       sender,
-      body:         body,
-      containsUrl:  hasUrl,
+    final result = await SecurityEngine.instance.analyzeSms(
+      sender:      sender,
+      body:        body,
+      containsUrl: hasUrl,
       extractedUrl: url,
     );
 
-    final score = result['riskScore'] as int;
-    if (score >= 60) {
+    if (result.riskScore >= 60) {
       await NotificationService.instance.showThreatDetected(
         sender:    sender,
-        category:  result['category'] as String,
-        riskScore: score,
+        category:  result.category,
+        riskScore: result.riskScore,
       );
     }
   }

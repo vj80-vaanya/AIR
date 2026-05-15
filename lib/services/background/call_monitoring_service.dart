@@ -1,9 +1,8 @@
 import 'package:flutter/services.dart';
-import '../../data/datasources/local/ffi_bridge.dart';
+
+import '../../core/engine/security_engine.dart';
 import '../notifications/notification_service.dart';
 
-/// Listens to incoming call events via a platform channel and runs them
-/// through the C engine for threat assessment.
 class CallMonitoringService {
   CallMonitoringService._();
   static final CallMonitoringService instance = CallMonitoringService._();
@@ -16,22 +15,21 @@ class CallMonitoringService {
 
   Future<void> _onCallEvent(dynamic event) async {
     if (event is! Map) return;
-    final phone      = event['phoneNumber'] as String? ?? '';
-    final callerId   = event['callerId']    as String? ?? '';
-    final isKnown    = event['isKnown']     as bool?   ?? false;
+    final phone    = event['phoneNumber'] as String? ?? '';
+    final callerId = event['callerId']    as String? ?? '';
+    final isKnown  = event['isKnownContact'] as bool? ?? false;
 
-    final result = FFIBridge.instance.analyzeCall(
+    final result = await SecurityEngine.instance.analyzeCall(
       phoneNumber:   phone,
       callerId:      callerId,
       isKnownContact: isKnown,
     );
 
-    final score = result['riskScore'] as int;
-    if (score >= 60) {
+    if (result.riskScore >= 60) {
       await NotificationService.instance.showThreatDetected(
         sender:    phone,
-        category:  result['category'] as String,
-        riskScore: score,
+        category:  result.category,
+        riskScore: result.riskScore,
       );
     }
   }
