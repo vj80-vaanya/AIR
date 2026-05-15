@@ -24,14 +24,14 @@ jobs:
           channel: stable
           cache: true
 
-      # Download Gradle 8.6 and generate gradle-wrapper.jar (binary not in repo)
-      - name: Generate Gradle wrapper jar
+      # gradle-wrapper.jar is a binary not committed to the repo.
+      # Download it directly from the official Gradle source (they commit it for bootstrapping).
+      - name: Bootstrap Gradle wrapper jar
         run: |
-          curl -sL https://services.gradle.org/distributions/gradle-8.6-bin.zip -o /tmp/gradle.zip
-          unzip -q /tmp/gradle.zip -d /tmp/gradle-dist
-          /tmp/gradle-dist/gradle-8.6/bin/gradle wrapper --gradle-version=8.6
-          chmod +x gradlew
-        working-directory: android
+          curl -sL \
+            https://raw.githubusercontent.com/gradle/gradle/v8.6.0/gradle/wrapper/gradle-wrapper.jar \
+            -o android/gradle/wrapper/gradle-wrapper.jar
+          chmod +x android/gradlew
 
       - name: Flutter pub get
         run: flutter pub get
