@@ -24,14 +24,12 @@ jobs:
           channel: stable
           cache: true
 
-      # Generate gradle-wrapper.jar (binary not committed)
-      - uses: gradle/actions/setup-gradle@v3
-        with:
-          gradle-version: "8.6"
-
+      # Download Gradle 8.6 and generate gradle-wrapper.jar (binary not in repo)
       - name: Generate Gradle wrapper jar
         run: |
-          gradle wrapper --gradle-version=8.6 --distribution-type=all
+          curl -sL https://services.gradle.org/distributions/gradle-8.6-bin.zip -o /tmp/gradle.zip
+          unzip -q /tmp/gradle.zip -d /tmp/gradle-dist
+          /tmp/gradle-dist/gradle-8.6/bin/gradle wrapper --gradle-version=8.6
           chmod +x gradlew
         working-directory: android
 
