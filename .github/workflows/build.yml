@@ -24,14 +24,17 @@ jobs:
           channel: stable
           cache: true
 
-      # gradle-wrapper.jar is a binary not committed to the repo.
-      # Download it directly from the official Gradle source (they commit it for bootstrapping).
+      # gradle-wrapper.jar is a binary not committed; download from official Gradle source.
       - name: Bootstrap Gradle wrapper jar
         run: |
           curl -sL \
             https://raw.githubusercontent.com/gradle/gradle/v8.6.0/gradle/wrapper/gradle-wrapper.jar \
             -o android/gradle/wrapper/gradle-wrapper.jar
           chmod +x android/gradlew
+
+      - name: Flutter doctor
+        run: flutter doctor -v
+        continue-on-error: true
 
       - name: Flutter pub get
         run: flutter pub get
