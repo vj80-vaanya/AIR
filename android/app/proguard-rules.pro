@@ -1,0 +1,2 @@
+-keep class com.aisecurity.app.** { *; }
+-dontwarn com.aisecurity.app.**

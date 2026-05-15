@@ -1,0 +1,15 @@
+{
+  "unk_token": "[UNK]",
+  "sep_token": "[SEP]",
+  "pad_token": "[PAD]",
+  "cls_token": "[CLS]",
+  "mask_token": "[MASK]",
+  "unk_token_id": 100,
+  "sep_token_id": 102,
+  "pad_token_id": 0,
+  "cls_token_id": 101,
+  "mask_token_id": 103,
+  "vocab_size": 30522,
+  "do_lower_case": true,
+  "seq_len": 64
+}

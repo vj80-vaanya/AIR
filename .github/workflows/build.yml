@@ -1,0 +1,56 @@
+name: Build Debug APK
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+jobs:
+  debug-apk:
+    name: Debug APK
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          java-version: "17"
+          distribution: temurin
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.22.0"
+          channel: stable
+          cache: true
+
+      # Generate gradle-wrapper.jar (binary not committed)
+      - uses: gradle/actions/setup-gradle@v3
+        with:
+          gradle-version: "8.6"
+
+      - name: Generate Gradle wrapper jar
+        run: |
+          gradle wrapper --gradle-version=8.6 --distribution-type=all
+          chmod +x gradlew
+        working-directory: android
+
+      - name: Flutter pub get
+        run: flutter pub get
+
+      - name: Generate code (freezed / riverpod / json)
+        run: dart run build_runner build --delete-conflicting-outputs
+
+      - name: Analyze (non-blocking)
+        run: flutter analyze --no-fatal-infos
+        continue-on-error: true
+
+      - name: Build debug APK
+        run: flutter build apk --debug
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: ai-security-debug-${{ github.run_number }}
+          path: build/app/outputs/flutter-apk/app-debug.apk
+          retention-days: 30

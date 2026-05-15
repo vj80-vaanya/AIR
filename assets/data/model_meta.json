@@ -1,0 +1,21 @@
+{
+  "model_id": "mrm8488/bert-tiny-finetuned-sms-spam-detection",
+  "version": 1,
+  "seq_len": 64,
+  "labels": {
+    "0": "LABEL_0",
+    "1": "LABEL_1"
+  },
+  "spam_label_id": 1,
+  "ham_label_id": 0,
+  "note": "LABEL_0=ham LABEL_1=spam (trained on UCI SMS Spam Collection)",
+  "files": {
+    "onnx": "text_classifier.onnx",
+    "vocab": "vocab.txt",
+    "tokenizer_config": "tokenizer_config.json"
+  },
+  "size_bytes": {
+    "onnx": 17816581
+  },
+  "converted_at": "2026-05-15T13:02:26Z"
+}
