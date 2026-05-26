@@ -149,6 +149,9 @@ jobs:
       - name: Flutter pub get
         run: flutter pub get
 
+      - name: Scaffold missing iOS project files
+        run: flutter create --platforms=ios --org com.sinnov8 .
+
       - name: Generate code (freezed / riverpod / json)
         run: dart run build_runner build --delete-conflicting-outputs
 
