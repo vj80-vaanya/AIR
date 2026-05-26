@@ -12,6 +12,14 @@
 -keep class ai.onnxruntime.** { *; }
 -dontwarn ai.onnxruntime.**
 
+# ── Google ML Kit ─────────────────────────────────────────────────────────────
+# Only Latin script is used. The plugin references optional CJK/Devanagari
+# modules at runtime but they are not bundled — suppress R8 missing-class errors.
+-dontwarn com.google.mlkit.vision.text.chinese.**
+-dontwarn com.google.mlkit.vision.text.devanagari.**
+-dontwarn com.google.mlkit.vision.text.japanese.**
+-dontwarn com.google.mlkit.vision.text.korean.**
+
 # ── AndroidX + Google Play Core ───────────────────────────────────────────────
 -keep class androidx.** { *; }
 -dontwarn androidx.**
