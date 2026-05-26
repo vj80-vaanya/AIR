@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">AI Security</string>
+    <string name="accessibility_desc">AI Security monitors screen content from messaging and payment apps to detect and block scams in real time.</string>
 </resources>

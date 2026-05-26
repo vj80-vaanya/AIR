@@ -8,19 +8,16 @@
     <path
         android:fillColor="#FFFFFF"
         android:pathData="M54,18 L28,30 L28,56 C28,72 39,84 54,90 C69,84 80,72 80,56 L80,30 Z"/>
-    <!-- Lock body -->
+    <!-- Lock shackle -->
     <path
         android:fillColor="#1565C0"
         android:pathData="M44,52 L44,48 C44,41.4 48.5,36 54,36 C59.5,36 64,41.4 64,48 L64,52 Z"/>
-    <rect
+    <!-- Lock body (rect converted to path: left=40 top=52 right=68 bottom=70) -->
+    <path
         android:fillColor="#1565C0"
-        android:left="40"
-        android:top="52"
-        android:right="68"
-        android:bottom="70"/>
-    <circle
+        android:pathData="M40,52 L68,52 L68,70 L40,70 Z"/>
+    <!-- Keyhole (circle converted to path: cx=54 cy=60 r=4) -->
+    <path
         android:fillColor="#FFFFFF"
-        android:centerX="54"
-        android:centerY="60"
-        android:radius="4"/>
+        android:pathData="M54,56 A4,4,0,1,0,54.001,56 Z"/>
 </vector>
