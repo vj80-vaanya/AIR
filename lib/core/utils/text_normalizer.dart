@@ -17,7 +17,7 @@ class TextNormalizer {
       '8': 'b',
       '@': 'a',
       '!': 'i',
-      '$': 's',
+      r'$': 's',
       'v': 'u', // common in some scripts
     };
 

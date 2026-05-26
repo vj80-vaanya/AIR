@@ -40,7 +40,7 @@ class WordPieceTokenizer {
   }
 
   List<String> _splitWords(String text) =>
-      text.split(RegExp(r"[\s\.,!?;:()\[\]{}'\"<>/\\@#\$%^&*+=|~`]+"));
+      text.split(RegExp(r'[\s.,!?;:()\[\]{}<>/\\@#$%^&*+=|~`]+'));
 
   List<int> _wordpiece(String word) {
     if (_vocab.containsKey(word)) return [_vocab[word]!];
