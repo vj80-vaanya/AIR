@@ -1,4 +1,4 @@
-name: Build Debug APK
+name: Build Release APK
 
 on:
   push:
@@ -6,8 +6,8 @@ on:
   pull_request:
 
 jobs:
-  debug-apk:
-    name: Debug APK
+  release-apk:
+    name: Release APK (obfuscated)
     runs-on: ubuntu-latest
 
     steps:
@@ -24,24 +24,24 @@ jobs:
           channel: stable
           cache: true
 
-      # Generate gradle-wrapper.jar by running `gradle wrapper` with the official Gradle 8.6 binary.
-      # Downloading the raw JAR from GitHub fails because the file is stored in Git LFS —
-      # the raw endpoint returns the LFS pointer text, not the actual binary.
-      - name: Bootstrap Gradle wrapper jar
+      - name: Flutter pub get
+        run: flutter pub get
+
+      # local.properties must exist before Gradle evaluates settings.gradle.
+      # Flutter normally writes it during `flutter build`, but we need it earlier
+      # so the `gradle wrapper` bootstrap can evaluate settings.gradle successfully.
+      - name: Create local.properties + bootstrap gradle-wrapper.jar
         run: |
+          FLUTTER_ROOT="$(dirname "$(dirname "$(which flutter)")")"
+          printf 'sdk.dir=%s\nflutter.sdk=%s\n' "$ANDROID_SDK_ROOT" "$FLUTTER_ROOT" \
+            > android/local.properties
+
           curl -sL https://services.gradle.org/distributions/gradle-8.6-bin.zip \
             -o /tmp/gradle-8.6-bin.zip
           unzip -q /tmp/gradle-8.6-bin.zip -d /tmp/gradle-home
           /tmp/gradle-home/gradle-8.6/bin/gradle \
             -p android wrapper --gradle-version 8.6 --distribution-type bin
           chmod +x android/gradlew
-
-      - name: Flutter doctor
-        run: flutter doctor -v
-        continue-on-error: true
-
-      - name: Flutter pub get
-        run: flutter pub get
 
       - name: Generate code (freezed / riverpod / json)
         run: dart run build_runner build --delete-conflicting-outputs
