@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../presentation/providers/security_status_provider.dart';
-import '../../core/constants/colors.dart';
+import '../../providers/security_status_provider.dart';
+import '../../../core/constants/colors.dart';
 
 class PermissionGuardianScreen extends ConsumerWidget {
   const PermissionGuardianScreen({super.key});

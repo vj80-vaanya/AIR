@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import '../../services/background/ios_security_assistant.dart';
-import '../../core/engine/security_engine.dart';
+import '../../../services/background/ios_security_assistant.dart';
+import '../../../core/engine/security_engine.dart';
 
 class IOSSafetyScannerWidget extends StatefulWidget {
   const IOSSafetyScannerWidget({super.key});
@@ -53,7 +53,7 @@ class _IOSSafetyScannerWidgetState extends State<IOSSafetyScannerWidget> {
             else
               ElevatedButton.icon(
                 onPressed: _scanFromGallery,
-                icon: const Icon(Icons.add_photo_alternate_on_outlined),
+                icon: const Icon(Icons.add_photo_alternate_outlined),
                 label: const Text('Scan Screenshot'),
               ),
             if (_lastResult != null) ...[

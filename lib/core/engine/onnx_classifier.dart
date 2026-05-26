@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:onnxruntime/onnxruntime.dart';
 
 /// Runs highly compressed Small Language Models (SLMs) on-device.
@@ -20,10 +21,9 @@ class OnnxClassifier {
       opts.setInterOpNumThreads(1);
       opts.setIntraOpNumThreads(2);
       
-      final session = await OrtSession.fromAsset(
-        'assets/models/text_classifier.onnx',
-        opts,
-      );
+      final rawData = await rootBundle.load('assets/models/text_classifier.onnx');
+      final bytes   = rawData.buffer.asUint8List();
+      final session = OrtSession.fromBuffer(bytes, opts);
       return OnnxClassifier._(session);
     } catch (e) {
       debugPrint('[OnnxClassifier] Could not load model: $e');
