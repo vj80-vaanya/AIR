@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'package:sensors_plus/sensors_plus.dart';
-import '../../data/datasources/local/ffi_bridge.dart';
 import '../notifications/notification_service.dart';
 
 class FallDetectionService {

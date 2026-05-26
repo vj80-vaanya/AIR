@@ -15,6 +15,7 @@ import '../screens/family/member_detail_screen.dart';
 import '../screens/settings/settings_screen.dart';
 import '../screens/settings/protection_settings_screen.dart';
 import '../screens/settings/sos_settings_screen.dart';
+import '../screens/settings/permission_guardian_screen.dart';
 import '../widgets/common/bottom_nav_scaffold.dart';
 
 part 'app_router.g.dart';
@@ -35,6 +36,7 @@ GoRouter appRouter(AppRouterRef ref) {
         builder: (context, state, child) => BottomNavScaffold(child: child),
         routes: [
           GoRoute(path: '/dashboard', builder: (_, __) => const DashboardScreen()),
+          GoRoute(path: '/permission-guardian', builder: (_, __) => const PermissionGuardianScreen()),
           GoRoute(path: '/threats',   builder: (_, __) => const ThreatListScreen(),
             routes: [
               GoRoute(

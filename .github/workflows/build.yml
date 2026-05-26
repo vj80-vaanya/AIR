@@ -46,12 +46,23 @@ jobs:
         run: flutter analyze --no-fatal-infos
         continue-on-error: true
 
-      - name: Build debug APK
-        run: flutter build apk --debug
+      - name: Build release APK (obfuscated)
+        run: |
+          flutter build apk --release \
+            --target-platform android-arm64 \
+            --obfuscate \
+            --split-debug-info=build/symbols
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: ai-security-debug-${{ github.run_number }}
-          path: build/app/outputs/flutter-apk/app-debug.apk
+          name: ai-security-release-${{ github.run_number }}
+          path: build/app/outputs/flutter-apk/app-release.apk
           retention-days: 30
+
+      - name: Upload debug symbols
+        uses: actions/upload-artifact@v4
+        with:
+          name: debug-symbols-${{ github.run_number }}
+          path: build/symbols/
+          retention-days: 90

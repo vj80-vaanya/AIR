@@ -74,3 +74,25 @@ int crypto_decrypt_aes256gcm(const uint8_t *ct, int ct_len,
     *pt_len = out_len + final_len;
     return 0;
 }
+
+int se_hash_phone_number(const char *phone_number, const char *salt, uint8_t *output_hash) {
+    if (!phone_number || !output_hash) return -1;
+
+    EVP_MD_CTX *mdctx = EVP_MD_CTX_new();
+    const EVP_MD *md = EVP_sha256();
+    unsigned int md_len;
+
+    if (!mdctx) return -1;
+
+    if (1 != EVP_DigestInit_ex(mdctx, md, NULL)) goto err;
+    if (1 != EVP_DigestUpdate(mdctx, phone_number, strlen(phone_number))) goto err;
+    if (salt && 1 != EVP_DigestUpdate(mdctx, salt, strlen(salt))) goto err;
+    if (1 != EVP_DigestFinal_ex(mdctx, output_hash, &md_len)) goto err;
+
+    EVP_MD_CTX_free(mdctx);
+    return 0;
+
+err:
+    if (mdctx) EVP_MD_CTX_free(mdctx);
+    return -1;
+}

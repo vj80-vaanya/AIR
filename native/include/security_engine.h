@@ -118,6 +118,8 @@ int se_decrypt_data(const uint8_t *ciphertext, int ciphertext_len,
                     uint8_t       *plaintext,  int *plaintext_len,
                     const uint8_t *key);
 
+int se_hash_phone_number(const char *phone_number, const char *salt, uint8_t *output_hash);
+
 /* ─── Utility ────────────────────────────────────────────────────────────── */
 
 const char *se_get_last_error(void);

@@ -62,5 +62,17 @@ class NotificationService {
     );
   }
 
+  Future<void> showCriticalAlert({
+    required String title,
+    required String body,
+  }) async {
+    await _plugin.show(
+      9997,
+      title,
+      body,
+      const NotificationDetails(android: _channelSOS),
+    );
+  }
+
   Future<void> cancelAll() => _plugin.cancelAll();
 }

@@ -5,6 +5,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'app.dart';
 import 'core/engine/security_engine.dart';
 import 'services/notifications/notification_service.dart';
+import 'services/background/notification_monitoring_service.dart';
+import 'services/background/deep_scan_service.dart';
+import 'services/background/transaction_shield_service.dart';
+import 'services/background/remote_access_shield_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -26,7 +30,12 @@ Future<void> main() async {
   } catch (_) {}
 
   // Boot security engine in background — app launches immediately
-  SecurityEngine.instance.init();
+  SecurityEngine.instance.init().then((_) {
+    NotificationMonitoringService(SecurityEngine.instance).start();
+    DeepScanService(SecurityEngine.instance).start();
+    TransactionShieldService(SecurityEngine.instance).start();
+    RemoteAccessShieldService(SecurityEngine.instance).start();
+  });
 
   runApp(const ProviderScope(child: AISecurityApp()));
 }

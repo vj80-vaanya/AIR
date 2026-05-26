@@ -6,6 +6,9 @@ import '../../../core/constants/colors.dart';
 import '../../../core/constants/spacing.dart';
 import '../../../core/constants/strings.dart';
 import '../../providers/dashboard_provider.dart';
+import '../../providers/security_status_provider.dart';
+import 'dart:io';
+import '../../widgets/dashboard/ios_safety_scanner.dart';
 import '../../widgets/dashboard/protection_score_widget.dart';
 import '../../widgets/dashboard/quick_actions_grid.dart';
 import '../../widgets/dashboard/recent_activity_list.dart';
@@ -18,6 +21,7 @@ class DashboardScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final statusAsync = ref.watch(protectionStatusProvider);
     final threatsAsync = ref.watch(recentThreatsProvider);
+    final securityHealthAsync = ref.watch(securityStatusProvider);
 
     return Scaffold(
       body: CustomScrollView(
@@ -26,6 +30,11 @@ class DashboardScreen extends ConsumerWidget {
             floating: true,
             title: const Text(Strings.appName),
             actions: [
+              IconButton(
+                icon: const Icon(Icons.shield_outlined),
+                onPressed: () => context.push('/permission-guardian'),
+                tooltip: 'Security Health',
+              ),
               IconButton(
                 icon: const Icon(Icons.notifications_outlined),
                 onPressed: () => context.go('/threats'),
@@ -39,6 +48,18 @@ class DashboardScreen extends ConsumerWidget {
               vertical: Spacing.sm,
             ),
             sliver: SliverList.list(children: [
+              /* Security Health Banner */
+              securityHealthAsync.when(
+                data: (health) => health.isFullyProtected 
+                  ? const SizedBox.shrink()
+                  : Padding(
+                      padding: const EdgeInsets.only(bottom: Spacing.md),
+                      child: _SecurityHealthBanner(onTap: () => context.push('/permission-guardian')),
+                    ),
+                loading: () => const SizedBox.shrink(),
+                error: (_, __) => const SizedBox.shrink(),
+              ),
+
               /* Protection score */
               statusAsync.when(
                 data:    (s) => ProtectionScoreWidget(status: s),
@@ -46,6 +67,11 @@ class DashboardScreen extends ConsumerWidget {
                 error:   (_, __) => const _ErrorCard(),
               ),
               const SizedBox(height: Spacing.md),
+
+              if (Platform.isIOS) ...[
+                const IOSSafetyScannerWidget(),
+                const SizedBox(height: Spacing.md),
+              ],
 
               /* Weekly summary */
               statusAsync.maybeWhen(
@@ -93,6 +119,47 @@ class DashboardScreen extends ConsumerWidget {
         onPressed: () => context.push('/sos'),
         icon: const Icon(Icons.sos),
         label: const Text('SOS'),
+      ),
+    );
+  }
+}
+
+class _SecurityHealthBanner extends StatelessWidget {
+  final VoidCallback onTap;
+  const _SecurityHealthBanner({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return AppCard(
+      color: Colors.orange.withOpacity(0.1),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(Spacing.md),
+        child: Padding(
+          padding: const EdgeInsets.all(Spacing.md),
+          child: Row(
+            children: [
+              const Icon(Icons.warning_amber_rounded, color: Colors.orange),
+              const SizedBox(width: Spacing.md),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Protection Incomplete',
+                      style: TextStyle(fontWeight: FontWeight.bold, color: Colors.orange),
+                    ),
+                    Text(
+                      'Tap to enable vital security layers.',
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(Icons.chevron_right, color: Colors.orange),
+            ],
+          ),
+        ),
       ),
     );
   }

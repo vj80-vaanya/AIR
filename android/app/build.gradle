@@ -27,12 +27,15 @@ android {
 
     buildTypes {
         release {
-            // Debug signing for distributable test APK
+            // Debug signing for distributable test APK — replace with release keystore before store upload
             signingConfig signingConfigs.debug
-            minifyEnabled false
+            minifyEnabled true
+            shrinkResources true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
         debug {
             applicationIdSuffix ".debug"
+            minifyEnabled false
         }
     }
 }

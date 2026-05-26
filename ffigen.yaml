@@ -1,0 +1,48 @@
+# Run: dart run ffigen --config ffigen.yaml
+name: SecurityEngineBindings
+description: Auto-generated FFI bindings for the C security engine
+output: lib/generated/ffi_bindings.dart
+
+headers:
+  entry-points:
+    - 'native/include/security_engine.h'
+
+functions:
+  include:
+    - se_init
+    - se_cleanup
+    - se_analyze_call
+    - se_analyze_sms
+    - se_analyze_email
+    - se_analyze_whatsapp
+    - se_update_scam_db
+    - se_get_db_version
+    - se_get_record_count
+    - se_load_model
+    - se_get_model_version
+    - se_detect_fall
+    - se_calibrate_fall_detection
+    - se_trigger_sos
+    - se_cancel_sos
+    - se_test_sos
+    - se_encrypt_data
+    - se_decrypt_data
+    - se_get_last_error
+    - se_get_performance_stats
+
+structs:
+  include:
+    - ThreatAssessment
+    - CallInfo
+    - SMSInfo
+    - EmailInfo
+    - WhatsAppInfo
+    - SensorData
+    - FallResult
+
+type-map:
+  typedefs:
+    int32_t: int
+    int64_t: int
+    uint8_t: int
+    bool:    bool

@@ -71,3 +71,10 @@ GoogleService-Info.plist
 
 # Windows
 Thumbs.db
+
+# Claude Code internal
+.claude/
+
+# Local scratch files
+doc_content.txt
+*.docx
