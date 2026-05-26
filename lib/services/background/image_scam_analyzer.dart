@@ -1,4 +1,4 @@
-import '../core/engine/security_engine.dart';
+import '../../core/engine/security_engine.dart';
 
 class ImageScamAnalyzer {
   final SecurityEngine _engine;

@@ -1,6 +1,6 @@
 import 'dart:io';
 import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
-import '../core/engine/security_engine.dart';
+import '../../core/engine/security_engine.dart';
 
 class IOSSecurityAssistant {
   final _textRecognizer = TextRecognizer(script: TextRecognitionScript.latin);
