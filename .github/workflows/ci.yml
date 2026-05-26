@@ -198,6 +198,7 @@ jobs:
     name: Publish to Play (internal)
     needs: android-build
     if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+    continue-on-error: true  # requires GOOGLE_PLAY_SERVICE_ACCOUNT secret
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/download-artifact@v4
