@@ -24,12 +24,16 @@ jobs:
           channel: stable
           cache: true
 
-      # gradle-wrapper.jar is a binary not committed; download from official Gradle source.
+      # Generate gradle-wrapper.jar by running `gradle wrapper` with the official Gradle 8.6 binary.
+      # Downloading the raw JAR from GitHub fails because the file is stored in Git LFS —
+      # the raw endpoint returns the LFS pointer text, not the actual binary.
       - name: Bootstrap Gradle wrapper jar
         run: |
-          curl -sL \
-            https://raw.githubusercontent.com/gradle/gradle/v8.6.0/gradle/wrapper/gradle-wrapper.jar \
-            -o android/gradle/wrapper/gradle-wrapper.jar
+          curl -sL https://services.gradle.org/distributions/gradle-8.6-bin.zip \
+            -o /tmp/gradle-8.6-bin.zip
+          unzip -q /tmp/gradle-8.6-bin.zip -d /tmp/gradle-home
+          /tmp/gradle-home/gradle-8.6/bin/gradle \
+            -p android wrapper --gradle-version 8.6 --distribution-type bin
           chmod +x android/gradlew
 
       - name: Flutter doctor
