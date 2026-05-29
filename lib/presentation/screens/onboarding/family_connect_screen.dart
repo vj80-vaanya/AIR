@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/constants/colors.dart';
 import '../../../core/constants/spacing.dart';
+import '../../../data/repositories/settings_repository.dart';
 import '../../widgets/common/app_button.dart';
 
 class FamilyConnectScreen extends StatelessWidget {
@@ -46,7 +47,10 @@ class FamilyConnectScreen extends StatelessWidget {
             AppButton(
               label:     'Skip for now',
               variant:   AppButtonVariant.outline,
-              onPressed: () => context.go('/dashboard'),
+              onPressed: () async {
+                await SettingsRepository.setOnboardingDone();
+                if (context.mounted) context.go('/dashboard');
+              },
             ),
             const SizedBox(height: Spacing.md),
           ],
@@ -77,9 +81,10 @@ class _QRSheet extends StatelessWidget {
                textAlign: TextAlign.center),
           const SizedBox(height: Spacing.md),
           FilledButton(
-            onPressed: () {
+            onPressed: () async {
               Navigator.pop(context);
-              context.go('/dashboard');
+              await SettingsRepository.setOnboardingDone();
+              if (context.mounted) context.go('/dashboard');
             },
             child: const Text('Done'),
           ),

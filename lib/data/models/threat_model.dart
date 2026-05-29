@@ -3,7 +3,7 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 part 'threat_model.freezed.dart';
 part 'threat_model.g.dart';
 
-enum ThreatChannel { call, sms, whatsapp, email }
+enum ThreatChannel { call, sms, whatsapp, telegram, instagram, email, other }
 
 @freezed
 class ThreatModel with _$ThreatModel {

@@ -4,10 +4,13 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.net.Uri
 import android.os.Build
+import android.telephony.SmsManager
 import android.telephony.TelephonyManager
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.EventChannel
+import io.flutter.plugin.common.MethodChannel
 
 /**
  * Bridges Android call/SMS events to Flutter via EventChannels.
@@ -15,13 +18,14 @@ import io.flutter.plugin.common.EventChannel
  */
 object SecurityPlugin {
 
-    private const val CALL_CHANNEL = "ai_security/call_events"
-    private const val SMS_CHANNEL  = "ai_security/sms_events"
+    private const val CALL_CHANNEL         = "ai_security/call_events"
+    private const val SMS_CHANNEL          = "ai_security/sms_events"
     private const val NOTIFICATION_CHANNEL = "ai_security/notification_events"
-    private const val DEEP_SCAN_CHANNEL = "ai_security/deep_scan_events"
-    private const val PAYMENT_CHANNEL   = "ai_security/payment_events"
-    private const val REMOTE_CHANNEL    = "ai_security/remote_events"
-    private const val STATUS_CHANNEL    = "ai_security/status"
+    private const val DEEP_SCAN_CHANNEL    = "ai_security/deep_scan_events"
+    private const val PAYMENT_CHANNEL      = "ai_security/payment_events"
+    private const val REMOTE_CHANNEL       = "ai_security/remote_events"
+    private const val STATUS_CHANNEL       = "ai_security/status"
+    private const val SOS_CHANNEL          = "ai_security/sos"
 
     fun register(engine: FlutterEngine, context: Context) {
         EventChannel(engine.dartExecutor.binaryMessenger, CALL_CHANNEL)
@@ -42,7 +46,7 @@ object SecurityPlugin {
         EventChannel(engine.dartExecutor.binaryMessenger, REMOTE_CHANNEL)
             .setStreamHandler(RemoteStreamHandler(context))
 
-        io.flutter.plugin.common.MethodChannel(engine.dartExecutor.binaryMessenger, STATUS_CHANNEL)
+        MethodChannel(engine.dartExecutor.binaryMessenger, STATUS_CHANNEL)
             .setMethodCallHandler { call, result ->
                 when (call.method) {
                     "isNotificationListenerEnabled" -> {
@@ -66,7 +70,50 @@ object SecurityPlugin {
                     else -> result.notImplemented()
                 }
             }
+
+        // SOS: send SMS alerts + make emergency call
+        MethodChannel(engine.dartExecutor.binaryMessenger, SOS_CHANNEL)
+            .setMethodCallHandler { call, result ->
+                when (call.method) {
+                    "sendSosAlerts" -> {
+                        @Suppress("UNCHECKED_CAST")
+                        val contacts = call.argument<List<Map<String, String>>>("contacts") ?: emptyList()
+                        val message  = call.argument<String>("message") ?: "SOS EMERGENCY! I need immediate help!"
+                        val smsManager = getSmsManager(context)
+                        var sent = 0
+                        for (contact in contacts) {
+                            val phone = contact["phone"] ?: continue
+                            try {
+                                smsManager.sendTextMessage(phone, null, message, null, null)
+                                sent++
+                            } catch (e: Exception) { /* ignored */ }
+                        }
+                        result.success(sent)
+                    }
+                    "makeEmergencyCall" -> {
+                        val phone = call.argument<String>("phone") ?: ""
+                        if (phone.isNotEmpty()) {
+                            try {
+                                val intent = Intent(Intent.ACTION_CALL).apply {
+                                    data = Uri.parse("tel:$phone")
+                                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                }
+                                context.startActivity(intent)
+                            } catch (e: Exception) { /* ignored */ }
+                        }
+                        result.success(true)
+                    }
+                    else -> result.notImplemented()
+                }
+            }
     }
+
+    @Suppress("DEPRECATION")
+    private fun getSmsManager(context: Context): SmsManager =
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S)
+            context.getSystemService(SmsManager::class.java)
+        else
+            SmsManager.getDefault()
 
     // ── Deep Scanning (Accessibility) ────────────────────────────────────────
 

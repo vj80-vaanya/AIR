@@ -1,6 +1,8 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import '../../core/engine/security_engine.dart';
+import '../../core/events/threat_event_bus.dart';
 import 'family_safety_relay.dart';
 import '../../domain/entities/threat.dart';
 import '../../data/models/threat_model.dart';
@@ -16,76 +18,73 @@ class NotificationMonitoringService {
 
   void start() {
     _subscription = _channel.receiveBroadcastStream().listen((event) async {
-      final map = event as Map;
+      final map     = event as Map;
       final package = map['package'] as String;
-      final sender = map['sender'] as String;
-      final body = map['body'] as String;
-      final isCall = map['isCall'] as bool? ?? false;
+      final sender  = map['sender']  as String;
+      final body    = map['body']    as String;
+      final isCall  = map['isCall']  as bool? ?? false;
 
-      late final ThreatResult assessment;
-      
-      if (isCall) {
-        // Special logic for VOIP calls
-        assessment = await _engine.analyzeCall(
-          phoneNumber: sender,
-          callerId: 'VOIP Call via $package',
-        );
-      } else {
-        // Analyze cross-app message
-        assessment = await _engine.analyzeNotification(
-          package: package,
-          sender: sender,
-          body: body,
-        );
-      }
+      final assessment = isCall
+          ? await _engine.analyzeCall(
+              phoneNumber: sender,
+              callerId:    'VoIP via $package',
+            )
+          : await _engine.analyzeNotification(
+              package: package,
+              sender:  sender,
+              body:    body,
+            );
 
       if (assessment.riskScore >= 70) {
         _engine.recordThreat(assessment);
-        
+
         final threat = Threat(
-          id: DateTime.now().millisecondsSinceEpoch.toString(),
-          channel: _mapPackageToChannel(package),
-          sender: sender,
-          riskScore: assessment.riskScore,
-          category: assessment.category,
-          reason: assessment.reason,
-          timestamp: DateTime.now(),
+          id:         DateTime.now().millisecondsSinceEpoch.toString(),
+          channel:    _channel_(package),
+          sender:     sender,
+          riskScore:  assessment.riskScore,
+          category:   assessment.category,
+          reason:     assessment.reason,
+          timestamp:  DateTime.now(),
           wasBlocked: assessment.shouldBlock,
           confidence: assessment.confidence,
-          detail: body,
+          detail:     body,
         );
-        
-        // Persist threat to SQLite for history
+
         final db = await DatabaseManager.database;
         await db.insert('threats', {
-          'id': threat.id,
-          'channel': threat.channel.name,
-          'sender': threat.sender,
+          'id':         threat.id,
+          'channel':    threat.channel.name,
+          'sender':     threat.sender,
           'risk_score': threat.riskScore,
-          'category': threat.category,
-          'reason': threat.reason,
-          'timestamp': threat.timestamp.toIso8601String(),
+          'category':   threat.category,
+          'reason':     threat.reason,
+          'timestamp':  threat.timestamp.toIso8601String(),
           'was_blocked': threat.wasBlocked ? 1 : 0,
-          'detail': threat.detail,
+          'detail':     threat.detail,
         });
 
-        print('New Threat Persisted: ${threat.category} from ${threat.sender}');
+        debugPrint('[NMS] ${threat.category} from ${threat.sender}');
 
-        // Collaborative Defense: Relay critical threats to family
+        // Real-time dashboard refresh
+        ThreatEventBus.instance.emit();
+
+        // SMS family members on critical threats
         if (threat.riskScore >= 90) {
-           _relay.relayCriticalThreat(threat, 'GUARDIAN_PUBLIC_KEY_PLACEHOLDER');
+          _relay.relayCriticalThreat(threat);
         }
       }
     });
   }
 
-  ThreatChannel _mapPackageToChannel(String package) {
-    if (package.contains('whatsapp')) return ThreatChannel.whatsapp;
-    // We could add Telegram/Signal to the enum, but for now map to whatsapp or sms
-    return ThreatChannel.whatsapp; 
+  ThreatChannel _channel_(String package) {
+    if (package.contains('whatsapp'))  return ThreatChannel.whatsapp;
+    if (package.contains('telegram'))  return ThreatChannel.telegram;
+    if (package.contains('instagram')) return ThreatChannel.instagram;
+    if (package.contains('securesms')) return ThreatChannel.other; // Signal
+    if (package.contains('orca'))      return ThreatChannel.other; // Messenger
+    return ThreatChannel.other;
   }
 
-  void stop() {
-    _subscription?.cancel();
-  }
+  void stop() => _subscription?.cancel();
 }

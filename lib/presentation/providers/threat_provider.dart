@@ -1,3 +1,4 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../data/models/threat_model.dart';
 import '../../domain/entities/threat.dart';
@@ -31,11 +32,25 @@ Future<List<Threat>> filteredThreats(FilteredThreatsRef ref) async {
   return rows.map(_rowToThreat).toList();
 }
 
+/// Non-generated family provider — loads a single threat by id from SQLite.
+final threatByIdProvider =
+    FutureProvider.family<Threat?, String>((ref, id) async {
+  final db = await DatabaseManager.database;
+  final rows = await db.query(
+    'threats',
+    where: 'id = ?',
+    whereArgs: [id],
+    limit: 1,
+  );
+  if (rows.isEmpty) return null;
+  return _rowToThreat(rows.first);
+});
+
 Threat _rowToThreat(Map<String, dynamic> row) {
   final channelStr = row['channel'] as String? ?? 'whatsapp';
   final channel = ThreatChannel.values.firstWhere(
     (c) => c.name == channelStr,
-    orElse: () => ThreatChannel.whatsapp,
+    orElse: () => ThreatChannel.other,
   );
   return Threat(
     id: row['id'] as String,

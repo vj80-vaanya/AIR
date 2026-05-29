@@ -1,40 +1,39 @@
+import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
+import '../../data/repositories/settings_repository.dart';
 import '../../domain/entities/threat.dart';
-import '../../core/utils/crypto_utils.dart';
-import 'dart:convert';
-import 'package:http/http.dart' as http;
+import '../../core/utils/helpers.dart';
 
+/// Relays a critical threat alert to family members via SMS.
+/// No backend required — SMS is delivered even without internet.
 class FamilySafetyRelay {
-  final String guardianEndpoint = 'https://api.aisecurity.app/v1/family/alert';
+  static const _sosChannel = MethodChannel('ai_security/sos');
 
-  /// Sends an end-to-end encrypted threat alert to the user's family guardian.
-  /// Only the guardian's app can decrypt the details of the threat.
-  Future<bool> relayCriticalThreat(Threat threat, String guardianPublicKey) async {
-    if (threat.riskScore < 90) return false; // Only relay high-confidence threats
+  Future<void> relayCriticalThreat(Threat threat) async {
+    if (threat.riskScore < 90) return;
 
-    final payload = {
-      'id': threat.id,
-      'type': threat.category,
-      'reason': threat.reason,
-      'timestamp': threat.timestamp.toIso8601String(),
-    };
+    final members = SettingsRepository.familyMembers;
+    if (members.isEmpty) return;
 
-    // Encrypt the payload so even our servers can't see the threat details
-    final encryptedData = CryptoUtils.generateVerificationToken(jsonEncode(payload));
+    final catLabel = Helpers.categoryLabel(threat.category);
+    // Omit threat.reason to avoid forwarding raw scam content to third parties.
+    final message =
+        '⚠️ AI Security ALERT: A $catLabel scam attempt was detected on your family member\'s device. '
+        'Risk score: ${threat.riskScore}/100. '
+        'Please check on them.';
 
-    try {
-      final response = await http.post(
-        Uri.parse(guardianEndpoint),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'guardianKey': guardianPublicKey,
-          'encryptedPayload': encryptedData,
-          'alertLevel': 'CRITICAL',
-        }),
-      );
-
-      return response.statusCode == 202;
-    } catch (e) {
-      return false;
+    for (final member in members) {
+      final phone = member['phone'] as String?;
+      if (phone == null || phone.isEmpty) continue;
+      // Each member is attempted independently — one failure must not block others.
+      try {
+        await _sosChannel.invokeMethod('sendSosAlerts', {
+          'contacts': [{'name': member['name'] ?? '', 'phone': phone}],
+          'message':  message,
+        });
+      } catch (e) {
+        debugPrint('[FamilyRelay] SMS to $phone failed: $e');
+      }
     }
   }
 }

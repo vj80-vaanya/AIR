@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import '../../core/engine/security_engine.dart';
 import '../notifications/notification_service.dart';
@@ -25,7 +26,7 @@ class RemoteAccessShieldService {
           body: 'DANGER: You recently received a ${threat?.category} alert. Scammers often use apps like AnyDesk to steal money. Close this app immediately!',
         );
 
-        print('Remote Access Shield Intercepted: $package during active threat');
+        debugPrint('Remote Access Shield Intercepted: $package during active threat');
       }
     });
   }

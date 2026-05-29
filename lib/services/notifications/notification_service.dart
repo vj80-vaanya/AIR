@@ -1,3 +1,4 @@
+import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 class NotificationService {
@@ -36,6 +37,8 @@ class NotificationService {
     required String category,
     required int    riskScore,
   }) async {
+    // Haptic feedback so the user feels the alert even if sound is off
+    HapticFeedback.vibrate();
     await _plugin.show(
       riskScore,
       'Threat detected from $sender',
@@ -70,6 +73,36 @@ class NotificationService {
       9997,
       title,
       body,
+      const NotificationDetails(android: _channelSOS),
+    );
+  }
+
+  Future<void> showWeeklyReport({
+    required int    blocked,
+    required int    total,
+    String?         topCategory,
+  }) async {
+    final body = total == 0
+        ? 'No threats this week. Stay safe!'
+        : '$blocked of $total threats blocked.'
+          '${topCategory != null ? ' Top threat: $topCategory.' : ''}';
+
+    await _plugin.show(
+      9996,
+      '🛡️ Your Weekly Safety Report',
+      body,
+      const NotificationDetails(android: _channelThreat),
+    );
+  }
+
+  Future<void> showFamilyAlert({
+    required String memberName,
+    required String category,
+  }) async {
+    await _plugin.show(
+      9995,
+      '⚠️ Family alert: $memberName',
+      'Received a $category scam attempt.',
       const NotificationDetails(android: _channelSOS),
     );
   }

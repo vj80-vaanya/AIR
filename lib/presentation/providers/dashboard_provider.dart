@@ -1,8 +1,19 @@
+import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import '../../core/events/threat_event_bus.dart';
 import '../../domain/entities/protection_status.dart';
 import '../../domain/entities/threat.dart';
 import '../../data/models/threat_model.dart';
 import '../../data/datasources/local/database_manager.dart';
+import '../../data/repositories/settings_repository.dart';
+
+/// Fires whenever a new threat is stored — dashboard listens and invalidates.
+/// keepAlive=true so events are not dropped when the dashboard tab is off-screen.
+final newThreatStreamProvider = StreamProvider<DateTime>((ref) {
+  ref.keepAlive(); // prevent disposal when dashboard is not the active tab
+  return ThreatEventBus.instance.stream;
+});
 
 part 'dashboard_provider.g.dart';
 
@@ -29,17 +40,27 @@ Future<ProtectionStatus> protectionStatus(ProtectionStatusRef ref) async {
 
   final score = (100 - (todayCount * 5)).clamp(0, 100);
 
-  return ProtectionStatus(
+  final status = ProtectionStatus(
     score: score,
     threatsBlockedToday: todayCount,
     threatsBlockedWeek: weekCount,
-    callProtectionActive: true,
-    smsProtectionActive: true,
-    whatsappProtectionActive: true,
-    emailProtectionActive: true,
-    fallDetectionActive: true,
+    callProtectionActive:     SettingsRepository.callProtect,
+    smsProtectionActive:      SettingsRepository.smsProtect,
+    whatsappProtectionActive: SettingsRepository.waProtect,
+    emailProtectionActive:    SettingsRepository.emailProtect,
+    fallDetectionActive:      SettingsRepository.fallDetection,
     lastUpdated: now,
   );
+
+  // Push fresh stats to Android home-screen widget
+  try {
+    await const MethodChannel('ai_security/device_data').invokeMethod(
+      'updateWidgetStats',
+      {'score': score, 'today': todayCount},
+    );
+  } catch (_) {}
+
+  return status;
 }
 
 @riverpod
@@ -57,7 +78,7 @@ Threat _rowToThreat(Map<String, dynamic> row) {
   final channelStr = row['channel'] as String? ?? 'whatsapp';
   final channel = ThreatChannel.values.firstWhere(
     (c) => c.name == channelStr,
-    orElse: () => ThreatChannel.whatsapp,
+    orElse: () => ThreatChannel.other,
   );
   return Threat(
     id: row['id'] as String,

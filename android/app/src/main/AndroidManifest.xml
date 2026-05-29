@@ -5,16 +5,27 @@
     <uses-permission android:name="android.permission.INTERNET"/>
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
 
+    <!-- Storage (WhatsApp cleanup — Android ≤ 12) -->
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"
+        android:maxSdkVersion="32"/>
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+        android:maxSdkVersion="29"/>
+    <!-- Android 13+ granular media permissions -->
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES"/>
+    <uses-permission android:name="android.permission.READ_MEDIA_VIDEO"/>
+    <uses-permission android:name="android.permission.READ_MEDIA_AUDIO"/>
+
     <!-- Phone / call monitoring -->
     <uses-permission android:name="android.permission.READ_PHONE_STATE"/>
     <uses-permission android:name="android.permission.READ_CALL_LOG"/>
     <uses-permission android:name="android.permission.CALL_PHONE"/>
 
-    <!-- SMS monitoring -->
+    <!-- SMS -->
     <uses-permission android:name="android.permission.RECEIVE_SMS"/>
     <uses-permission android:name="android.permission.READ_SMS"/>
+    <uses-permission android:name="android.permission.SEND_SMS"/>
 
-    <!-- Location (fall detection + SOS) -->
+    <!-- Location (SOS) -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
     <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION"/>
@@ -26,9 +37,9 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
     <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT"/>
 
-    <!-- Background + wake -->
+    <!-- Background / wake -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION"/>
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC"/>
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
     <uses-permission android:name="android.permission.WAKE_LOCK"/>
 
@@ -53,44 +64,65 @@
             android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"
             android:hardwareAccelerated="true"
             android:windowSoftInputMode="adjustResize">
-
             <meta-data
                 android:name="io.flutter.embedding.android.NormalTheme"
                 android:resource="@style/NormalTheme"/>
-
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
 
-        <!-- Google Maps placeholder (replace with real key for maps feature) -->
-        <meta-data
-            android:name="com.google.android.geo.API_KEY"
-            android:value=""/>
+        <meta-data android:name="com.google.android.geo.API_KEY" android:value=""/>
+        <meta-data android:name="flutterEmbedding" android:value="2"/>
 
-        <meta-data
-            android:name="flutterEmbedding"
-            android:value="2"/>
-
+        <!-- Notification Listener (WhatsApp / Telegram scanning) -->
         <service android:name=".NotificationReceiverService"
                  android:label="AI Security Notification Listener"
                  android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE"
                  android:exported="true">
             <intent-filter>
-                <action android:name="android.service.notification.NotificationListenerService" />
+                <action android:name="android.service.notification.NotificationListenerService"/>
             </intent-filter>
         </service>
 
+        <!-- Accessibility Service (Deep screen scanning) -->
         <service android:name=".DeepSecurityService"
                  android:label="AI Security Deep Protection"
                  android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE"
                  android:exported="true">
             <intent-filter>
-                <action android:name="android.accessibilityservice.AccessibilityService" />
+                <action android:name="android.accessibilityservice.AccessibilityService"/>
             </intent-filter>
             <meta-data android:name="android.accessibilityservice"
-                       android:resource="@xml/accessibility_service_config" />
+                       android:resource="@xml/accessibility_service_config"/>
         </service>
+
+        <!-- Foreground service (keeps engine alive) -->
+        <service android:name=".ForegroundSecurityService"
+                 android:foregroundServiceType="dataSync"
+                 android:exported="false"/>
+
+        <!-- Quick Settings Tile -->
+        <service android:name=".SecurityQSTileService"
+                 android:label="AI Security"
+                 android:icon="@mipmap/ic_launcher"
+                 android:permission="android.permission.BIND_QUICK_SETTINGS_TILE"
+                 android:exported="true">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE"/>
+            </intent-filter>
+        </service>
+
+        <!-- Home screen widget -->
+        <receiver android:name=".SecurityWidget"
+                  android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
+            </intent-filter>
+            <meta-data android:name="android.appwidget.provider"
+                       android:resource="@xml/security_widget_info"/>
+        </receiver>
+
     </application>
 </manifest>

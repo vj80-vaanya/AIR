@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import '../../core/engine/security_engine.dart';
 import '../notifications/notification_service.dart';
@@ -25,7 +26,7 @@ class TransactionShieldService {
           body: 'You recently received a scam alert: ${threat?.category}. Are you being pressured to send money? Most "Digital Arrests" end with a fake payment request.',
         );
 
-        print('Transaction Shield Intercepted: $package during active threat');
+        debugPrint('Transaction Shield Intercepted: $package during active threat');
       }
     });
   }

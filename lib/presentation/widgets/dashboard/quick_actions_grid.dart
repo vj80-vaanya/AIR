@@ -9,52 +9,169 @@ class QuickActionsGrid extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final actions = [
-      (label: 'SOS',         icon: Icons.sos,          color: AppColors.danger,  path: '/sos'),
-      (label: 'Scam Check',  icon: Icons.search,        color: AppColors.primary, path: '/threats'),
-      (label: 'Family',      icon: Icons.people,        color: AppColors.secondary, path: '/family'),
-      (label: 'Settings',    icon: Icons.settings,      color: AppColors.textSecondary, path: '/settings'),
+      _Action(
+        label:    'SOS',
+        sub:      'Emergency alert',
+        icon:     Icons.sos_rounded,
+        gradient: [const Color(0xFFF43F5E), const Color(0xFFE11D48)],
+        glow:     AppColors.danger,
+        path:     '/sos',
+      ),
+      _Action(
+        label:    'Scan',
+        sub:      'Check any message',
+        icon:     Icons.manage_search_rounded,
+        gradient: [AppColors.gradientStart, AppColors.gradientEnd],
+        glow:     AppColors.primary,
+        path:     '/scan',
+      ),
+      _Action(
+        label:    'Family',
+        sub:      'Safety network',
+        icon:     Icons.people_alt_rounded,
+        gradient: [AppColors.secondary, AppColors.secondaryDark],
+        glow:     AppColors.secondary,
+        path:     '/family',
+      ),
+      _Action(
+        label:    'Cleanup',
+        sub:      'Free WhatsApp space',
+        icon:     Icons.cleaning_services_rounded,
+        gradient: [const Color(0xFFF59E0B), const Color(0xFFD97706)],
+        glow:     AppColors.warning,
+        path:     '/cleanup',
+      ),
     ];
 
-    return GridView.count(
-      crossAxisCount: 2,
-      shrinkWrap:     true,
-      physics:        const NeverScrollableScrollPhysics(),
-      mainAxisSpacing: Spacing.sm,
-      crossAxisSpacing: Spacing.sm,
-      childAspectRatio: 2.2,
-      children: actions.map((a) => _ActionTile(
-        label: a.label,
-        icon:  a.icon,
-        color: a.color,
-        onTap: () => context.go(a.path),
-      )).toList(),
+    return GridView.builder(
+      shrinkWrap:       true,
+      physics:          const NeverScrollableScrollPhysics(),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount:   2,
+        mainAxisSpacing:  Spacing.sm,
+        crossAxisSpacing: Spacing.sm,
+        childAspectRatio: 1.55,
+      ),
+      itemCount:   actions.length,
+      itemBuilder: (_, i) => _ActionCard(action: actions[i]),
     );
   }
 }
 
-class _ActionTile extends StatelessWidget {
-  const _ActionTile({required this.label, required this.icon, required this.color, required this.onTap});
-  final String   label;
-  final IconData icon;
-  final Color    color;
-  final VoidCallback onTap;
+class _Action {
+  const _Action({
+    required this.label,
+    required this.sub,
+    required this.icon,
+    required this.gradient,
+    required this.glow,
+    required this.path,
+  });
+
+  final String       label;
+  final String       sub;
+  final IconData     icon;
+  final List<Color>  gradient;
+  final Color        glow;
+  final String       path;
+}
+
+class _ActionCard extends StatefulWidget {
+  const _ActionCard({required this.action});
+  final _Action action;
+
+  @override
+  State<_ActionCard> createState() => _ActionCardState();
+}
+
+class _ActionCardState extends State<_ActionCard>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _ctrl;
+  late final Animation<double>   _scale;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(
+      vsync:    this,
+      duration: const Duration(milliseconds: 100),
+      lowerBound: 0.0,
+      upperBound: 0.04,
+    );
+    _scale = Tween<double>(begin: 1.0, end: 0.96)
+        .animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut));
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: color.withAlpha(25),
-      borderRadius: BorderRadius.circular(Radius.card),
-      child: InkWell(
-        onTap:        onTap,
-        borderRadius: BorderRadius.circular(Radius.card),
-        child: Padding(
-          padding: const EdgeInsets.all(Spacing.md),
-          child: Row(
-            children: [
-              Icon(icon, color: color, size: 28),
-              const SizedBox(width: Spacing.sm),
-              Text(label, style: TextStyle(color: color, fontWeight: FontWeight.w600)),
+    final a = widget.action;
+
+    return GestureDetector(
+      onTapDown:   (_) => _ctrl.forward(),
+      onTapUp:     (_) { _ctrl.reverse(); context.push(a.path); },
+      onTapCancel: ()  => _ctrl.reverse(),
+      child: ScaleTransition(
+        scale: _scale,
+        child: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin:  Alignment.topLeft,
+              end:    Alignment.bottomRight,
+              colors: a.gradient,
+            ),
+            borderRadius: BorderRadius.circular(22),
+            boxShadow: [
+              BoxShadow(
+                color:      a.glow.withOpacity(0.28),
+                blurRadius: 14,
+                offset:     const Offset(0, 5),
+              ),
             ],
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment:  MainAxisAlignment.spaceBetween,
+              children: [
+                Container(
+                  width:  40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color:        Colors.white.withOpacity(0.22),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(a.icon, color: Colors.white, size: 22),
+                ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      a.label,
+                      style: const TextStyle(
+                        color:         Colors.white,
+                        fontSize:      15,
+                        fontWeight:    FontWeight.w700,
+                        letterSpacing: -0.2,
+                      ),
+                    ),
+                    Text(
+                      a.sub,
+                      style: const TextStyle(
+                        color:    Colors.white70,
+                        fontSize: 11,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
       ),

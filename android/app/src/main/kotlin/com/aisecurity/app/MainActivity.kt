@@ -7,5 +7,9 @@ class MainActivity : FlutterActivity() {
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
         SecurityPlugin.register(flutterEngine, this)
+        MediaCleanupPlugin.register(flutterEngine, this)
+        DeviceDataPlugin.register(flutterEngine, this)
+        // Keep the security engine alive in background
+        ForegroundSecurityService.start(this)
     }
 }

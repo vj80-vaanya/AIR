@@ -6,20 +6,36 @@ class CountdownTimer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: 120,
-      height: 120,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        border: Border.all(color: Colors.white, width: 4),
+    return AnimatedSwitcher(
+      duration: const Duration(milliseconds: 300),
+      transitionBuilder: (child, anim) => ScaleTransition(
+        scale: CurvedAnimation(parent: anim, curve: Curves.easeOutBack),
+        child: FadeTransition(opacity: anim, child: child),
       ),
-      alignment: Alignment.center,
-      child: Text(
-        '$seconds',
-        style: const TextStyle(
-          color: Colors.white,
-          fontSize: 64,
-          fontWeight: FontWeight.bold,
+      child: Container(
+        key:    ValueKey(seconds),
+        width:  130,
+        height: 130,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          border: Border.all(color: Colors.white24, width: 2),
+          gradient: const RadialGradient(
+            colors: [
+              Color(0x33FFFFFF), // white 20%
+              Color(0x00FFFFFF),
+            ],
+          ),
+        ),
+        alignment: Alignment.center,
+        child: Text(
+          '$seconds',
+          style: const TextStyle(
+            color:         Colors.white,
+            fontSize:      72,
+            fontWeight:    FontWeight.w900,
+            letterSpacing: -2,
+            height:        1,
+          ),
         ),
       ),
     );
