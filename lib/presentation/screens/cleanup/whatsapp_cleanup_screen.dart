@@ -556,6 +556,6 @@ String _fmtSize(int bytes) {
 
 String _label(String key) => _categories
     .firstWhere((c) => c.key == key,
-        orElse: () => const _Cat(
+        orElse: () => _Cat(
             key: '', label: key, icon: Icons.folder, color: AppColors.primary))
     .label;

@@ -143,9 +143,9 @@ class _ThreatListItem extends StatelessWidget {
     if (isFirst && isLast) {
       radius = BorderRadius.circular(20);
     } else if (isFirst) {
-      radius = const BorderRadius.vertical(top: Radius.circular(20));
+      radius = BorderRadius.vertical(top: Radius.circular(20));
     } else if (isLast) {
-      radius = const BorderRadius.vertical(bottom: Radius.circular(20));
+      radius = BorderRadius.vertical(bottom: Radius.circular(20));
     }
 
     return Material(

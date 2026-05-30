@@ -395,7 +395,7 @@ class _ResultCard extends StatelessWidget {
                 colors: [color.withOpacity(0.85), color],
               ),
               borderRadius:
-                  const BorderRadius.vertical(top: Radius.circular(20)),
+                  BorderRadius.vertical(top: Radius.circular(20)),
             ),
             child: Row(
               children: [

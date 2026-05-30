@@ -530,7 +530,7 @@ class _GuideSheet extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color:        isDark ? AppColors.darkSurface : Colors.white,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
       ),
       padding: EdgeInsets.fromLTRB(
         24, 16, 24,
