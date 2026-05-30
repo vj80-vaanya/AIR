@@ -15,7 +15,6 @@ linter:
     - avoid_empty_else
     - avoid_print
     - avoid_redundant_argument_values
-    - avoid_returning_null_for_future
     - avoid_type_to_string
     - cancel_subscriptions
     - close_sinks

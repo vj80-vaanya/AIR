@@ -84,15 +84,12 @@ class SecurityEngine {
 
     int    score    = (botRisk * 100).round();
     String category = botRisk > 0 ? 'ROBOCALL_BOT' : 'SAFE';
-    String reason   = botRisk > 0 ? 'High-frequency calling pattern detected (Bot indicator)' : 'No issues found';
-
     // High-risk international prefixes common in Indian scam calls
     const riskPrefixes = ['+92', '+880', '+60', '+66', '+856', '+855', '0092'];
     for (final p in riskPrefixes) {
       if (phoneNumber.startsWith(p)) {
         score    = (score + 50).clamp(0, 100);
         category = 'SUSPICIOUS_CALL';
-        reason   += ' + High-risk international prefix';
         break;
       }
     }

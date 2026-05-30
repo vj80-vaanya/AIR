@@ -1,6 +1,4 @@
-import 'dart:collection';
 import '../../data/datasources/local/database_manager.dart';
-import 'package:sqflite/sqflite.dart';
 
 class SenderReputationManager {
   static const int _velocityThreshold = 5;

@@ -1,6 +1,5 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
-import '../../../core/constants/colors.dart';
 import '../../../domain/entities/protection_status.dart';
 
 class ProtectionScoreWidget extends StatefulWidget {

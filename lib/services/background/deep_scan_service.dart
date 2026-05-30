@@ -7,7 +7,6 @@ import 'family_safety_relay.dart';
 import '../../domain/entities/threat.dart';
 import '../../data/models/threat_model.dart';
 import '../../data/datasources/local/database_manager.dart';
-import '../../data/repositories/settings_repository.dart';
 
 class DeepScanService {
   static const _channel = EventChannel('ai_security/deep_scan_events');

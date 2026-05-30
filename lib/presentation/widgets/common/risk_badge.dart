@@ -10,7 +10,6 @@ class RiskBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final color = score.riskColor;
-    final label = score.riskLabel;
 
     return Container(
       width:  size,

@@ -74,9 +74,8 @@ class PatternMatcher {
     }
 
     // 2. Entity extraction "Smartness"
-    final hasUpi   = _upiRegex.hasMatch(text);
-    final hasUrl   = _urlRegex.hasMatch(text);
-    final hasPhone = _phoneRegex.hasMatch(text);
+    final hasUpi = _upiRegex.hasMatch(text);
+    final hasUrl = _urlRegex.hasMatch(text);
 
     // Boost score if suspicious entities coexist with scam keywords
     if (score > 0) {

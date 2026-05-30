@@ -1,4 +1,3 @@
-import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../core/errors/failure.dart';
 import '../../services/notifications/notification_service.dart';
 

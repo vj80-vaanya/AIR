@@ -1,9 +1,4 @@
 class FinancialSafetyInterceptor {
-  static final _financialTriggers = [
-    'upi', 'gpay', 'phonepe', 'paytm', 'scanner', 'qr code', 'pin', 'otp',
-    'bank', 'kosh', 'paisa', 'transfer', 'received', 'pending'
-  ];
-
   /// Specifically analyzes messages for "Payment Request" scams common in India.
   /// This detects the "Receive Money" scam where users are tricked into entering a PIN.
   static int analyzeSocialEngineering(String text) {
