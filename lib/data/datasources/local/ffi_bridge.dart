@@ -3,4 +3,4 @@
 /// remaining call sites compile without changes.
 library ffi_bridge;
 
-export '../../core/engine/security_engine.dart' show SecurityEngine, ThreatResult;
+export '../../../core/engine/security_engine.dart' show SecurityEngine, ThreatResult;
