@@ -27,20 +27,43 @@ class _WhatsAppCleanupScreenState extends State<WhatsAppCleanupScreen> {
   }
 
   Future<void> _init() async {
-    // Check/request storage permission
-    final perm = Platform.isAndroid
-        ? (await Permission.storage.isGranted ||
-            await Permission.photos.isGranted)
-        : await Permission.photos.isGranted;
+    bool permitted;
 
-    if (!perm) {
-      final req = Platform.isAndroid
-          ? await Permission.storage.request()
-          : await Permission.photos.request();
-      if (!req.isGranted) {
-        setState(() { _loading = false; _permitted = false; });
-        return;
+    if (Platform.isAndroid) {
+      // Prefer MANAGE_EXTERNAL_STORAGE — gives full access to Android/media/com.whatsapp/
+      // which contains the real WhatsApp media. Falls back to granular media permissions.
+      if (await Permission.manageExternalStorage.isGranted) {
+        permitted = true;
+      } else {
+        // Request "All files access" — opens the Settings page on Android 11+
+        final manageStatus = await Permission.manageExternalStorage.request();
+        if (manageStatus.isGranted) {
+          permitted = true;
+        } else {
+          // Fallback: granular media permissions (only sees MediaStore-indexed files)
+          final alreadyGranted = await Permission.storage.isGranted ||
+              await Permission.photos.isGranted;
+          if (alreadyGranted) {
+            permitted = true;
+          } else {
+            final statuses = await [
+              Permission.storage,
+              Permission.photos,
+              Permission.videos,
+              Permission.audio,
+            ].request();
+            permitted = (statuses[Permission.storage]?.isGranted ?? false) ||
+                (statuses[Permission.photos]?.isGranted ?? false);
+          }
+        }
       }
+    } else {
+      permitted = (await Permission.photos.request()).isGranted;
+    }
+
+    if (!permitted) {
+      setState(() { _loading = false; _permitted = false; });
+      return;
     }
 
     _permitted = true;

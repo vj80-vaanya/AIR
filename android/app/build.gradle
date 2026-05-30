@@ -6,7 +6,7 @@ plugins {
 
 android {
     namespace "com.aisecurity.app"
-    compileSdk 35
+    compileSdk 36
 
     compileOptions {
         coreLibraryDesugaringEnabled true
@@ -20,7 +20,7 @@ android {
 
     defaultConfig {
         applicationId "com.aisecurity.app"
-        minSdk 21
+        minSdkVersion flutter.minSdkVersion
         targetSdk 35
         versionCode flutter.versionCode
         versionName flutter.versionName
