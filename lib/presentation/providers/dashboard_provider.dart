@@ -8,14 +8,14 @@ import '../../data/models/threat_model.dart';
 import '../../data/datasources/local/database_manager.dart';
 import '../../data/repositories/settings_repository.dart';
 
+part 'dashboard_provider.g.dart';
+
 /// Fires whenever a new threat is stored — dashboard listens and invalidates.
 /// keepAlive=true so events are not dropped when the dashboard tab is off-screen.
 final newThreatStreamProvider = StreamProvider<DateTime>((ref) {
   ref.keepAlive(); // prevent disposal when dashboard is not the active tab
   return ThreatEventBus.instance.stream;
 });
-
-part 'dashboard_provider.g.dart';
 
 @riverpod
 Future<ProtectionStatus> protectionStatus(ProtectionStatusRef ref) async {
