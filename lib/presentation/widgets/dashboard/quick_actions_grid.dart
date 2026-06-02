@@ -10,14 +10,6 @@ class QuickActionsGrid extends StatelessWidget {
   Widget build(BuildContext context) {
     final actions = [
       _Action(
-        label:    'SOS',
-        sub:      'Emergency alert',
-        icon:     Icons.sos_rounded,
-        gradient: [const Color(0xFFF43F5E), const Color(0xFFE11D48)],
-        glow:     AppColors.danger,
-        path:     '/sos',
-      ),
-      _Action(
         label:    'Scan',
         sub:      'Check any message',
         icon:     Icons.manage_search_rounded,
@@ -26,11 +18,19 @@ class QuickActionsGrid extends StatelessWidget {
         path:     '/scan',
       ),
       _Action(
+        label:    'OTP',
+        sub:      'Copy OTPs quickly',
+        icon:     Icons.lock_clock_rounded,
+        gradient: [AppColors.secondary, AppColors.secondaryDark],
+        glow:     AppColors.secondary,
+        path:     '/otp',
+      ),
+      _Action(
         label:    'Family',
         sub:      'Safety network',
         icon:     Icons.people_alt_rounded,
-        gradient: [AppColors.secondary, AppColors.secondaryDark],
-        glow:     AppColors.secondary,
+        gradient: [const Color(0xFF8B5CF6), const Color(0xFF7C3AED)],
+        glow:     const Color(0xFF8B5CF6),
         path:     '/family',
       ),
       _Action(
