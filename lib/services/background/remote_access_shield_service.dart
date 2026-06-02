@@ -12,23 +12,32 @@ class RemoteAccessShieldService {
   RemoteAccessShieldService(this._engine);
 
   void start() {
-    _subscription = _channel.receiveBroadcastStream().listen((event) async {
-      final map = event as Map;
-      final package = map['package'] as String;
+    _subscription = _channel.receiveBroadcastStream().listen(
+      _onEvent,
+      onError: (e) => debugPrint('[RemoteAccessShield:stream] $e'),
+      cancelOnError: false,
+    );
+  }
 
-      // Remote Access app detected (AnyDesk, TeamViewer, etc.)
-      if (_engine.hasRecentCriticalThreat()) {
-        final threat = _engine.getMostRecentThreat();
-        
-        // Trigger high-priority LOCKDOWN intervention
-        await NotificationService.instance.showCriticalAlert(
-          title: '🚨 REMOTE ACCESS LOCKDOWN',
-          body: 'DANGER: You recently received a ${threat?.category} alert. Scammers often use apps like AnyDesk to steal money. Close this app immediately!',
-        );
+  Future<void> _onEvent(dynamic event) async {
+    if (event is! Map) {
+      debugPrint('[RemoteAccessShield] Unexpected event type: ${event.runtimeType}');
+      return;
+    }
 
-        debugPrint('Remote Access Shield Intercepted: $package during active threat');
-      }
-    });
+    final package = event['package'] as String? ?? '';
+
+    if (_engine.hasRecentCriticalThreat()) {
+      final threat   = _engine.getMostRecentThreat();
+      final catLabel = threat?.category ?? 'security threat';
+
+      await NotificationService.instance.showCriticalAlert(
+        title: 'REMOTE ACCESS WARNING',
+        body:  'DANGER: You recently received a $catLabel alert. Scammers use apps like AnyDesk to steal money. Close this app immediately!',
+      );
+
+      debugPrint('[RemoteAccessShield] Intercepted $package during active threat');
+    }
   }
 
   void stop() => _subscription?.cancel();

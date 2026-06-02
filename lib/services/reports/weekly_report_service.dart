@@ -1,5 +1,6 @@
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../data/datasources/local/database_manager.dart';
+import '../../data/repositories/settings_repository.dart';
 import '../../core/utils/helpers.dart';
 import '../notifications/notification_service.dart';
 
@@ -17,12 +18,14 @@ class WeeklyReportService {
     final lastRaw = prefs.getString(_keyLastReport);
     final last    = lastRaw != null ? DateTime.tryParse(lastRaw) : null;
 
-    // Show on Sundays or whenever 7 days have elapsed without a report
-    final isDue = last == null ||
-        now.difference(last).inDays >= 7 ||
-        now.weekday == DateTime.sunday;
+    // Show when 7 days have elapsed since the last report.
+    // The Sunday condition was removed — it caused the report to fire multiple
+    // times on the same Sunday whenever the app restarted.
+    final isDue = last == null || now.difference(last).inDays >= 7;
 
     if (!isDue) return;
+    // Respect quiet hours — don't wake up users with a report during sleep
+    if (SettingsRepository.isInQuietHours()) return;
 
     await _generate();
     await prefs.setString(_keyLastReport, now.toIso8601String());

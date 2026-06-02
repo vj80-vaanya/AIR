@@ -12,23 +12,32 @@ class TransactionShieldService {
   TransactionShieldService(this._engine);
 
   void start() {
-    _subscription = _channel.receiveBroadcastStream().listen((event) async {
-      final map = event as Map;
-      final package = map['package'] as String;
+    _subscription = _channel.receiveBroadcastStream().listen(
+      _onEvent,
+      onError: (e) => debugPrint('[TransactionShield:stream] $e'),
+      cancelOnError: false,
+    );
+  }
 
-      // Payment app detected (GPay, PhonePe, etc.)
-      if (_engine.hasRecentCriticalThreat()) {
-        final threat = _engine.getMostRecentThreat();
-        
-        // Trigger high-priority intervention
-        await NotificationService.instance.showCriticalAlert(
-          title: '⚠️ TRANSACTION SHIELD ACTIVE',
-          body: 'You recently received a scam alert: ${threat?.category}. Are you being pressured to send money? Most "Digital Arrests" end with a fake payment request.',
-        );
+  Future<void> _onEvent(dynamic event) async {
+    if (event is! Map) {
+      debugPrint('[TransactionShield] Unexpected event type: ${event.runtimeType}');
+      return;
+    }
 
-        debugPrint('Transaction Shield Intercepted: $package during active threat');
-      }
-    });
+    final package = event['package'] as String? ?? '';
+
+    if (_engine.hasRecentCriticalThreat()) {
+      final threat    = _engine.getMostRecentThreat();
+      final catLabel  = threat?.category ?? 'security threat';
+
+      await NotificationService.instance.showCriticalAlert(
+        title: 'TRANSACTION SHIELD ACTIVE',
+        body:  'You recently received a $catLabel alert. Are you being pressured to send money? Most "Digital Arrests" end with a fake payment request.',
+      );
+
+      debugPrint('[TransactionShield] Intercepted $package during active threat');
+    }
   }
 
   void stop() => _subscription?.cancel();

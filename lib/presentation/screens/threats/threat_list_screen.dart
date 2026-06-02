@@ -43,7 +43,7 @@ class ThreatListScreen extends ConsumerWidget {
             body:  e.toString(),
           ),
           data: (threats) => threats.isEmpty
-              ? _EmptyAlerts(isDark: isDark)
+              ? _EmptyAlerts(isDark: isDark, channel: selectedChannel)
               : RefreshIndicator(
                   color: AppColors.primary,
                   onRefresh: () async => ref.invalidate(filteredThreatsProvider),
@@ -65,8 +65,9 @@ class ThreatListScreen extends ConsumerWidget {
 }
 
 class _EmptyAlerts extends StatelessWidget {
-  const _EmptyAlerts({required this.isDark});
-  final bool isDark;
+  const _EmptyAlerts({required this.isDark, required this.channel});
+  final bool           isDark;
+  final ThreatChannel? channel;
 
   @override
   Widget build(BuildContext context) {
@@ -99,9 +100,9 @@ class _EmptyAlerts extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 24),
-            const Text(
-              'You\'re Protected',
-              style: TextStyle(
+            Text(
+              channel == null ? 'You\'re Protected' : 'No ${_channelName(channel!)} threats',
+              style: const TextStyle(
                 fontSize:   22,
                 fontWeight: FontWeight.w800,
                 letterSpacing: -0.3,
@@ -109,7 +110,10 @@ class _EmptyAlerts extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              'No threats detected. Any suspicious\nmessages or calls will appear here.',
+              channel == null
+                  ? 'No suspicious calls or messages detected. Any scam attempts will appear here as soon as they arrive.'
+                  : 'No suspicious ${_channelName(channel!).toLowerCase()} detected yet. '
+                    'Threats from this channel will appear here automatically.',
               textAlign: TextAlign.center,
               style: TextStyle(
                 color:    AppColors.textSecondary,
@@ -123,6 +127,16 @@ class _EmptyAlerts extends StatelessWidget {
     );
   }
 }
+
+String _channelName(ThreatChannel c) => switch (c) {
+  ThreatChannel.call      => 'Call',
+  ThreatChannel.sms       => 'SMS',
+  ThreatChannel.whatsapp  => 'WhatsApp',
+  ThreatChannel.email     => 'Email',
+  ThreatChannel.telegram  => 'Telegram',
+  ThreatChannel.instagram => 'Instagram',
+  _                       => 'Message',
+};
 
 class _ThreatListItem extends StatelessWidget {
   const _ThreatListItem({
@@ -199,42 +213,26 @@ class _ThreatListItem extends StatelessWidget {
                         color: AppColors.textSecondary, fontSize: 11),
                   ),
                   const SizedBox(height: 4),
-                  if (t.wasBlocked)
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 6, vertical: 2),
-                      decoration: BoxDecoration(
-                        color:        AppColors.danger.withOpacity(0.10),
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: const Text(
-                        'BLOCKED',
-                        style: TextStyle(
-                          color:         AppColors.danger,
-                          fontSize:      9,
-                          fontWeight:    FontWeight.w700,
-                          letterSpacing: 0.5,
-                        ),
-                      ),
-                    )
-                  else
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 6, vertical: 2),
-                      decoration: BoxDecoration(
-                        color:        AppColors.warning.withOpacity(0.10),
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: const Text(
-                        'FLAGGED',
-                        style: TextStyle(
-                          color:         AppColors.warning,
-                          fontSize:      9,
-                          fontWeight:    FontWeight.w700,
-                          letterSpacing: 0.5,
-                        ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 7, vertical: 3),
+                    decoration: BoxDecoration(
+                      color:        t.wasBlocked
+                          ? AppColors.danger.withOpacity(0.10)
+                          : AppColors.warning.withOpacity(0.10),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text(
+                      t.wasBlocked ? '🚫 Stopped' : '⚠️ Check This',
+                      style: TextStyle(
+                        color:      t.wasBlocked
+                            ? AppColors.danger
+                            : AppColors.warning,
+                        fontSize:   9,
+                        fontWeight: FontWeight.w700,
                       ),
                     ),
+                  ),
                 ],
               ),
               const SizedBox(width: 4),

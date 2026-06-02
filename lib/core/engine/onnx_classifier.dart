@@ -78,8 +78,10 @@ double _runInference(_InferenceInput input) {
   ortType.release();
 
   // logits: List<List<double>> shape [1, 2]
-  final logits = (outputs[0]?.value as List<List<double>>)[0];
+  final rawValue = outputs[0]?.value;
   for (final o in outputs) o?.release();
+  if (rawValue == null) return 0.0;
+  final logits = (rawValue as List<List<double>>)[0];
 
   // softmax
   final maxL = math.max(logits[0], logits[1]);

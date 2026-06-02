@@ -6,6 +6,7 @@ import '../../../core/constants/colors.dart';
 import '../../../core/constants/spacing.dart';
 import '../../../core/utils/extensions.dart';
 import '../../widgets/common/app_button.dart';
+import '../../widgets/common/onboarding_step_bar.dart';
 
 class PermissionsScreen extends ConsumerStatefulWidget {
   const PermissionsScreen({super.key});
@@ -94,7 +95,7 @@ class _PermissionsScreenState extends ConsumerState<PermissionsScreen>
         icon:       Icons.phone_rounded,
         color:      AppColors.info,
         label:      'Phone Access',
-        reason:     'Detects robocalls and flags suspicious caller IDs the moment your phone rings.',
+        reason:     'Stops dangerous people from calling you and warns you before you answer.',
         permission: Permission.phone,
       ),
       _Perm(
@@ -102,7 +103,7 @@ class _PermissionsScreenState extends ConsumerState<PermissionsScreen>
         icon:       Icons.sms_rounded,
         color:      AppColors.warning,
         label:      'SMS Access',
-        reason:     'Scans incoming texts for OTP theft and phishing links before you open them.',
+        reason:     'Spots messages trying to steal your bank money or OTP before you open them.',
         permission: Permission.sms,
       ),
       _Perm(
@@ -110,7 +111,7 @@ class _PermissionsScreenState extends ConsumerState<PermissionsScreen>
         icon:       Icons.location_on_rounded,
         color:      AppColors.secondary,
         label:      'Location',
-        reason:     'Sends your location to emergency contacts during an SOS alert.',
+        reason:     'Sends your location to family automatically when you press the SOS button.',
         permission: Permission.location,
       ),
       _Perm(
@@ -118,7 +119,7 @@ class _PermissionsScreenState extends ConsumerState<PermissionsScreen>
         icon:       Icons.notifications_rounded,
         color:      AppColors.primary,
         label:      'Notifications',
-        reason:     'Delivers instant threat alerts even when the app is in the background.',
+        reason:     'Shows you danger alerts immediately, even when the app is not open.',
         permission: Permission.notification,
       ),
     ];
@@ -129,6 +130,8 @@ class _PermissionsScreenState extends ConsumerState<PermissionsScreen>
         padding: const EdgeInsets.symmetric(horizontal: Spacing.lg),
         child: Column(
           children: [
+            const OnboardingStepBar(step: 2),
+            const SizedBox(height: Spacing.sm),
             // Progress bar
             _ProgressBar(
                 granted: grantedCount, total: 4, isDark: isDark),

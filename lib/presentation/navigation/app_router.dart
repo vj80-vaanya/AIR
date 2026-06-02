@@ -1,5 +1,7 @@
+import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import '../../core/constants/colors.dart';
 
 import '../../data/repositories/settings_repository.dart';
 import '../screens/onboarding/welcome_screen.dart';
@@ -18,6 +20,8 @@ import '../screens/settings/sos_settings_screen.dart';
 import '../screens/settings/permission_guardian_screen.dart';
 import '../screens/scanner/manual_scan_screen.dart';
 import '../screens/cleanup/whatsapp_cleanup_screen.dart';
+import '../screens/cleanup/media_browse_screen.dart';
+import '../screens/cleanup/duplicate_groups_screen.dart';
 import '../screens/otp/otp_manager_screen.dart';
 import '../screens/calls/spam_calls_screen.dart';
 import '../widgets/common/bottom_nav_scaffold.dart';
@@ -85,6 +89,21 @@ GoRouter appRouter(AppRouterRef ref) {
       GoRoute(path: '/sos',     builder: (_, __) => const SOSScreen()),
       GoRoute(path: '/scan',       builder: (_, __) => const ManualScanScreen()),
       GoRoute(path: '/cleanup',    builder: (_, __) => const WhatsAppCleanupScreen()),
+      GoRoute(
+        path: '/cleanup/browse',
+        builder: (_, state) {
+          final extra = state.extra as Map<String, dynamic>;
+          return MediaBrowseScreen(
+            category:    extra['category'] as String,
+            label:       extra['label']    as String,
+            accentColor: extra['color']    as Color? ?? AppColors.secondary,
+          );
+        },
+      ),
+      GoRoute(
+        path: '/cleanup/duplicates',
+        builder: (_, __) => const DuplicateGroupsScreen(),
+      ),
       GoRoute(path: '/otp',        builder: (_, __) => const OtpManagerScreen()),
       GoRoute(path: '/spam-calls', builder: (_, __) => const SpamCallsScreen()),
     ],

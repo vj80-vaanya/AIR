@@ -46,6 +46,16 @@ final threatByIdProvider =
   return _rowToThreat(rows.first);
 });
 
+Future<void> markThreatFeedback(String id, String feedback) async {
+  final db = await DatabaseManager.database;
+  await db.update(
+    'threats',
+    {'feedback': feedback},
+    where: 'id = ?',
+    whereArgs: [id],
+  );
+}
+
 Threat _rowToThreat(Map<String, dynamic> row) {
   final channelStr = row['channel'] as String? ?? 'whatsapp';
   final channel = ThreatChannel.values.firstWhere(

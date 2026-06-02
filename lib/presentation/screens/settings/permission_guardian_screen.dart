@@ -59,7 +59,9 @@ class _PermissionGuardianScreenState
         loading: () => const Center(
           child: CircularProgressIndicator(color: AppColors.primary),
         ),
-        error: (e, _) => Center(child: Text('Error: $e')),
+        error: (e, _) => _PermissionCheckError(
+          onRetry: () => ref.read(securityStatusProvider.notifier).refresh(),
+        ),
         data:  (health) => _Body(health: health, isDark: isDark),
       ),
     );
@@ -404,11 +406,11 @@ class _PermissionCard extends StatelessWidget {
                       child: Text(
                         perm.why,
                         style: TextStyle(
-                          fontSize: 12.5,
+                          fontSize: 14,
                           color:    isDark
                               ? Colors.white70
                               : AppColors.textSecondary,
-                          height:   1.45,
+                          height:   1.5,
                         ),
                       ),
                     ),
@@ -771,4 +773,65 @@ class _PermDef {
   final bool         isGranted;
   final _PermType    type;
   final VoidCallback onEnable;
+}
+
+// ── Error state ───────────────────────────────────────────────────────────────
+
+class _PermissionCheckError extends StatelessWidget {
+  const _PermissionCheckError({required this.onRetry});
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(Spacing.xl),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width:  72,
+              height: 72,
+              decoration: BoxDecoration(
+                color:  AppColors.warning.withOpacity(0.12),
+                shape:  BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.wifi_off_rounded,
+                color: AppColors.warning,
+                size:  34,
+              ),
+            ),
+            const SizedBox(height: Spacing.md),
+            const Text(
+              'Could not check permissions',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'This can happen if the app is starting up or a system service is temporarily unavailable. Tap Retry to check again.',
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color:  AppColors.textSecondary,
+                height: 1.55,
+              ),
+            ),
+            const SizedBox(height: Spacing.lg),
+            FilledButton.icon(
+              onPressed: onRetry,
+              icon:  const Icon(Icons.refresh_rounded),
+              label: const Text('Retry'),
+              style: FilledButton.styleFrom(
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 28, vertical: 14),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14)),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }

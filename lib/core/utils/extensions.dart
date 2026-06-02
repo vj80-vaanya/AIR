@@ -11,13 +11,11 @@ extension IntRiskX on int {
     if (this < 80) return 'High Risk';
     return 'Critical';
   }
-
-  bool get shouldBlock => this >= 75;
 }
 
 extension StringX on String {
   String get initials {
-    final parts = trim().split(' ');
+    final parts = trim().split(' ').where((p) => p.isNotEmpty).toList();
     if (parts.isEmpty) return '?';
     if (parts.length == 1) return parts[0][0].toUpperCase();
     return '${parts[0][0]}${parts[1][0]}'.toUpperCase();

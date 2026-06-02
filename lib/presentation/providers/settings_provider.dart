@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../core/engine/security_engine.dart';
 import '../../data/repositories/settings_repository.dart';
 import '../../services/background/fall_detection_service.dart';
 
@@ -66,6 +67,7 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
   Future<void> setThreshold(double v) async {
     state = state.copyWith(threshold: v);
     await SettingsRepository.setThreshold(v);
+    SecurityEngine.instance.setBlockThreshold(v);
   }
 
   Future<void> setCallProtect(bool v) async {

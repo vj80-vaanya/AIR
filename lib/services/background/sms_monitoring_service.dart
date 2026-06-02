@@ -1,4 +1,5 @@
 import 'dart:math' as math;
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
 import '../../core/engine/security_engine.dart';
@@ -10,14 +11,18 @@ class SMSMonitoringService {
   SMSMonitoringService._();
   static final SMSMonitoringService instance = SMSMonitoringService._();
 
-  static const _channel = EventChannel('ai_security/sms_events');
-  static final _rng = math.Random.secure();
+  static const _channel  = EventChannel('ai_security/sms_events');
+  static final  _rng     = math.Random.secure();
+
+  // Per-sender notification cooldown — prevents notification spam from bulk SMS
+  final _lastNotified = <String, DateTime>{};
+  static const _notifCooldown = Duration(seconds: 60);
 
   void start() {
     _channel.receiveBroadcastStream().listen(
       _onSMSEvent,
-      onError: (e) => _onError('sms', e),
-      cancelOnError: false, // keep stream alive on errors
+      onError: (e) => _onError('stream', e),
+      cancelOnError: false,
     );
   }
 
@@ -39,25 +44,32 @@ class SMSMonitoringService {
       try {
         final db = await DatabaseManager.database;
         await db.insert('threats', {
-          'id':         '${DateTime.now().millisecondsSinceEpoch}_${_rng.nextInt(0xFFFFFF)}_sms',
-          'channel':    'sms',
-          'sender':     sender.isEmpty ? 'Unknown' : sender,
-          'risk_score': result.riskScore,
-          'category':   result.category,
-          'reason':     result.reason,
-          'timestamp':  DateTime.now().toIso8601String(),
+          'id':          '${DateTime.now().millisecondsSinceEpoch}_${_rng.nextInt(0xFFFFFF)}_sms',
+          'channel':     'sms',
+          'sender':      sender.isEmpty ? 'Unknown' : sender,
+          'risk_score':  result.riskScore,
+          'category':    result.category,
+          'reason':      result.reason,
+          'timestamp':   DateTime.now().toIso8601String(),
           'was_blocked': result.shouldBlock ? 1 : 0,
-          'detail':     body,
+          'detail':      body,
         });
       } catch (e) {
-        _onError('sms-db', e);
+        _onError('db-write', e);
       }
 
-      await NotificationService.instance.showThreatDetected(
-        sender:    sender.isEmpty ? 'Unknown' : sender,
-        category:  result.category,
-        riskScore: result.riskScore,
-      );
+      // Rate-limit notifications per sender: at most one every 60 seconds
+      final key  = sender.isEmpty ? 'unknown' : sender;
+      final last = _lastNotified[key];
+      final now  = DateTime.now();
+      if (last == null || now.difference(last) > _notifCooldown) {
+        _lastNotified[key] = now;
+        await NotificationService.instance.showThreatDetected(
+          sender:    sender.isEmpty ? 'Unknown' : sender,
+          category:  result.category,
+          riskScore: result.riskScore,
+        );
+      }
 
       SecurityEngine.instance.recordThreat(result);
       ThreatEventBus.instance.emit();
@@ -65,6 +77,6 @@ class SMSMonitoringService {
   }
 
   void _onError(String tag, dynamic e) {
-    // Log but never rethrow — keeps the stream alive.
+    debugPrint('[SMSMonitoring:$tag] $e');
   }
 }

@@ -1,3 +1,4 @@
+import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
 import '../../core/engine/security_engine.dart';
 
 class ImageScamAnalyzer {
@@ -5,35 +6,39 @@ class ImageScamAnalyzer {
 
   ImageScamAnalyzer(this._engine);
 
-  /// Analyzes an image (e.g., a WhatsApp attachment) for scam content.
+  /// Analyzes an image file at [imagePath] for scam content using on-device OCR.
   /// Scammers often send fake "Arrest Warrants" or "Bank Notices" as images.
-  Future<ThreatResult> analyzeImage(List<int> imageBytes) async {
-    // 1. Perform On-Device OCR (Optical Character Recognition)
-    // In production, this would use ML Kit or a native Tesseract bridge.
-    final extractedText = await _performOcr(imageBytes);
+  Future<ThreatResult> analyzeImage(String imagePath) async {
+    final extractedText = await _performOcr(imagePath);
 
     if (extractedText.isEmpty) return ThreatResult.safe;
 
-    // 2. Pass extracted text through our Contextual Intelligence Engine
     final result = await _engine.analyzeText(extractedText);
 
-    // 3. Boost score if specific visual cues are present (e.g., fake official seals)
+    // Boost score for image-based scams — visual spoofing increases severity
     if (result.riskScore > 50) {
-      // Logic for detecting fake logos/seals would go here
       return ThreatResult(
-        riskScore: (result.riskScore + 15).clamp(0, 100),
-        category: 'IMAGE_BASED_${result.category}',
-        reason: 'Scam content detected in image: ${result.reason}',
-        shouldBlock: true,
-        confidence: result.confidence,
+        riskScore:    (result.riskScore + 15).clamp(0, 100),
+        category:     'IMAGE_BASED_${result.category}',
+        reason:       'Scam content detected in image: ${result.reason}',
+        shouldBlock:  true,
+        confidence:   result.confidence,
       );
     }
 
     return result;
   }
 
-  Future<String> _performOcr(List<int> bytes) async {
-    // TODO: Implement native bridge to Google ML Kit OCR
-    return ""; 
+  Future<String> _performOcr(String imagePath) async {
+    final inputImage  = InputImage.fromFilePath(imagePath);
+    final recognizer  = TextRecognizer(script: TextRecognitionScript.latin);
+    try {
+      final recognized = await recognizer.processImage(inputImage);
+      return recognized.text;
+    } catch (_) {
+      return '';
+    } finally {
+      await recognizer.close();
+    }
   }
 }

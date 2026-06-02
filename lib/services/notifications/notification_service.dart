@@ -1,11 +1,18 @@
+import 'dart:async';
+import 'dart:math' as math;
 import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import '../../data/repositories/settings_repository.dart';
 
 class NotificationService {
   NotificationService._();
   static final NotificationService instance = NotificationService._();
 
   final _plugin = FlutterLocalNotificationsPlugin();
+  static final _rng = math.Random.secure();
+
+  // Reserve IDs 9990-9999 for system alerts; threat alerts use random IDs below 9000
+  static int _threatId() => _rng.nextInt(9000);
 
   static const _channelThreat = AndroidNotificationDetails(
     'threats',
@@ -38,9 +45,11 @@ class NotificationService {
     required int    riskScore,
   }) async {
     // Haptic feedback so the user feels the alert even if sound is off
-    HapticFeedback.vibrate();
+    // Skip notification sound/banner during quiet hours; SOS is always exempt
+    if (SettingsRepository.isInQuietHours()) return;
+    unawaited(HapticFeedback.vibrate());
     await _plugin.show(
-      riskScore,
+      _threatId(),
       'Threat detected from $sender',
       '$category — risk score $riskScore',
       const NotificationDetails(android: _channelThreat),

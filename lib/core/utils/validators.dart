@@ -2,8 +2,9 @@ abstract final class Validators {
   static String? phone(String? value) {
     if (value == null || value.trim().isEmpty) return 'Phone number is required';
     final digits = value.replaceAll(RegExp(r'\D'), '');
-    if (digits.length < 10 || digits.length > 13) {
-      return 'Enter a valid phone number';
+    // Indian mobile: 10 digits, or 12 with +91 country code prefix
+    if (digits.length < 10 || digits.length > 12) {
+      return 'Enter a valid 10-digit mobile number';
     }
     return null;
   }

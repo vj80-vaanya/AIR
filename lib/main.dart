@@ -37,10 +37,16 @@ Future<void> main() async {
     await NotificationService.instance.initialize();
   } catch (_) {}
 
-  // Boot security engine — app launches immediately
+  // Apply persisted block threshold so engine behaviour matches user setting.
+  SecurityEngine.instance.setBlockThreshold(SettingsRepository.threshold);
+
+  // Start call/SMS monitoring immediately — pattern analysis works before ML loads.
+  // This closes the ~5-10s window where calls arrived before the engine was ready.
+  CallMonitoringService.instance.start();
+  SMSMonitoringService.instance.start();
+
+  // Load ML model in background; remaining services require the engine to be warm.
   SecurityEngine.instance.init().then((_) async {
-    CallMonitoringService.instance.start();
-    SMSMonitoringService.instance.start();
     NotificationMonitoringService(SecurityEngine.instance).start();
     DeepScanService(SecurityEngine.instance).start();
     TransactionShieldService(SecurityEngine.instance).start();
@@ -50,7 +56,6 @@ Future<void> main() async {
       FallDetectionService.instance.start();
     }
 
-    // Weekly safety report (fires on Sunday or after 7-day gap)
     await WeeklyReportService.instance.maybeShow();
   });
 

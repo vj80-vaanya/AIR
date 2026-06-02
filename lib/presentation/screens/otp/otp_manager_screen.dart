@@ -18,9 +18,16 @@ class _OtpManagerScreenState extends State<OtpManagerScreen>
   bool            _loading = true;
   String?         _error;
 
-  // OTP patterns — 4–8 digit codes
+  // OTP patterns covering common Indian bank/service SMS formats.
+  // Group 1: keyword before digits ("OTP is 123456", "code: 123456")
+  // Group 2: digits followed by expiry/context ("123456 valid for 10 min")
+  // Group 3: isolated well-formed OTP after common prefixes like "Your OTP: "
   static final _otpRegex = RegExp(
-    r'\b(\d{4,8})\b',
+    r'(?:otp|code|pin|passcode|password|use|enter|verify)\s*[:\-]?\s*(\d{4,8})\b'
+    r'|'
+    r'\b(\d{4,8})\b\s*(?:is\b|for\b|to\b|expires|valid|do not|don)'
+    r'|'
+    r'(?:your|the)\s+(?:otp|code|pin|one.?time)\s+(?:is|:)\s*(\d{4,8})\b',
     caseSensitive: false,
   );
   static final _otpKeywords = [
@@ -73,7 +80,9 @@ class _OtpManagerScreenState extends State<OtpManagerScreen>
         final match = _otpRegex.firstMatch(body);
         if (match == null) continue;
 
-        final code   = match.group(1)!;
+        // Three alternation groups; pick whichever captured
+        final code = match.group(1) ?? match.group(2) ?? match.group(3);
+        if (code == null) continue;
         final bank   = _bankKeywords.firstWhere(
           (k) => lower.contains(k),
           orElse: () => '',
@@ -105,6 +114,7 @@ class _OtpManagerScreenState extends State<OtpManagerScreen>
   String _capitalise(String s) =>
       s.isEmpty ? s : s[0].toUpperCase() + s.substring(1);
 
+
   @override
   Widget build(BuildContext context) {
     final isDark = context.isDark;
@@ -113,6 +123,15 @@ class _OtpManagerScreenState extends State<OtpManagerScreen>
       appBar: AppBar(
         title: const Text('OTP Manager'),
         actions: [
+          if (_otps.any((o) => o.expired))
+            TextButton.icon(
+              onPressed: () => setState(() {
+                _otps = _otps.where((o) => !o.expired).toList();
+              }),
+              icon:  const Icon(Icons.delete_sweep_rounded, size: 18),
+              label: const Text('Clear expired'),
+              style: TextButton.styleFrom(foregroundColor: AppColors.textSecondary),
+            ),
           IconButton(
             icon:      const Icon(Icons.refresh_rounded),
             onPressed: _load,
@@ -234,7 +253,9 @@ class _OtpCard extends StatelessWidget {
                         overflow:  TextOverflow.ellipsis,
                       ),
                       Text(
-                        otp.time.relativeTime,
+                        otp.expired
+                            ? otp.time.relativeTime
+                            : _timeRemaining(otp.time),
                         style: TextStyle(
                           color:    AppColors.textSecondary,
                           fontSize: 12,
@@ -367,9 +388,10 @@ class _EmptyOtp extends StatelessWidget {
                   style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700)),
               const SizedBox(height: 8),
               Text(
-                'OTPs from your SMS inbox will appear here for quick copying.',
+                'OTPs from your SMS inbox appear here automatically for quick copying.\n\nMake sure SMS permission is granted in Settings → Check App Permissions.',
                 textAlign: TextAlign.center,
-                style: TextStyle(color: AppColors.textSecondary, height: 1.5),
+                style: TextStyle(
+                    color: AppColors.textSecondary, height: 1.6),
               ),
             ],
           ),
@@ -392,11 +414,17 @@ class _PermError extends StatelessWidget {
               const Icon(Icons.sms_failed_rounded,
                   size: 64, color: AppColors.warning),
               const SizedBox(height: 16),
-              const Text('SMS permission needed',
+              const Text('Could not read SMS',
                   style: TextStyle(
                       fontSize: 18, fontWeight: FontWeight.w700)),
               const SizedBox(height: 8),
-              Text(error,
+              const Text(
+                'SMS permission is needed to show your OTPs here.\n\nGo to Settings → Check App Permissions to grant it.',
+                textAlign: TextAlign.center,
+                style: TextStyle(color: AppColors.textSecondary, height: 1.5),
+              ),
+              const SizedBox(height: 4),
+              Text('Technical details: $error',
                   textAlign: TextAlign.center,
                   style: const TextStyle(color: AppColors.textSecondary)),
             ],
@@ -436,6 +464,15 @@ class _PrivacyNote extends StatelessWidget {
           ],
         ),
       );
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+String _timeRemaining(DateTime received) {
+  const validMinutes = 15;
+  final remaining    = validMinutes - DateTime.now().difference(received).inMinutes;
+  if (remaining <= 1) return 'Expires very soon';
+  return 'Expires in $remaining minutes';
 }
 
 // ── Data ──────────────────────────────────────────────────────────────────────

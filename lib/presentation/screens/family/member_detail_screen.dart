@@ -94,20 +94,17 @@ class MemberDetailScreen extends ConsumerWidget {
                               color:        Colors.white.withOpacity(0.18),
                               borderRadius: BorderRadius.circular(20),
                             ),
-                            child: Row(
+                            child: const Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Container(
-                                  width:  7,
-                                  height: 7,
-                                  decoration: const BoxDecoration(
-                                    color:  Color(0xFF34D399),
-                                    shape:  BoxShape.circle,
-                                  ),
+                                Icon(
+                                  Icons.shield_outlined,
+                                  color: Colors.white70,
+                                  size:  12,
                                 ),
-                                const SizedBox(width: 6),
-                                const Text(
-                                  'Safe',
+                                SizedBox(width: 5),
+                                Text(
+                                  'Protected',
                                   style: TextStyle(
                                     color:      Colors.white,
                                     fontSize:   12,
@@ -159,7 +156,7 @@ class MemberDetailScreen extends ConsumerWidget {
                 icon:   Icons.shield_rounded,
                 color:  AppColors.secondary,
                 label:  'Protection status',
-                value:  'Monitoring active',
+                value:  'Will be alerted if you receive threats',
                 isDark: isDark,
               ),
               const SizedBox(height: Spacing.sm),

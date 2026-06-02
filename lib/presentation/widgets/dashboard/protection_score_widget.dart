@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import '../../../domain/entities/protection_status.dart';
 
 class ProtectionScoreWidget extends StatefulWidget {
@@ -51,7 +52,9 @@ class _ProtectionScoreWidgetState extends State<ProtectionScoreWidget>
         ? 'Fully Protected'
         : s.score >= 50
             ? 'Partial Shield'
-            : 'High Risk';
+            : s.score > 0
+                ? 'Low Protection'
+                : 'Protection Off';
 
     return FadeTransition(
       opacity: _fadeAnim,
@@ -127,10 +130,16 @@ class _ProtectionScoreWidgetState extends State<ProtectionScoreWidget>
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Status pill
-                    _StatusPill(
-                      text:  statusText,
-                      green: s.score >= 80,
+                    // Status pill — tappable when score is low
+                    GestureDetector(
+                      onTap: s.score < 80
+                          ? () => context.push('/settings/protection')
+                          : null,
+                      child: _StatusPill(
+                        text:     statusText,
+                        green:    s.score >= 80,
+                        tappable: s.score < 80,
+                      ),
                     ),
                     const SizedBox(height: 12),
 
@@ -145,9 +154,11 @@ class _ProtectionScoreWidgetState extends State<ProtectionScoreWidget>
                         letterSpacing: -0.5,
                       ),
                     ),
-                    const Text(
-                      'threats blocked today',
-                      style: TextStyle(
+                    Text(
+                      s.score == 0
+                          ? 'Enable protection in Settings'
+                          : 'threats blocked today',
+                      style: const TextStyle(
                         color:    Colors.white60,
                         fontSize: 13,
                       ),
@@ -191,9 +202,10 @@ class _ProtectionScoreWidgetState extends State<ProtectionScoreWidget>
 }
 
 class _StatusPill extends StatelessWidget {
-  const _StatusPill({required this.text, required this.green});
+  const _StatusPill({required this.text, required this.green, this.tappable = false});
   final String text;
   final bool   green;
+  final bool   tappable;
 
   @override
   Widget build(BuildContext context) {
@@ -211,8 +223,8 @@ class _StatusPill extends StatelessWidget {
             height: 7,
             decoration: BoxDecoration(
               color: green
-                  ? const Color(0xFF34D399) // emerald-400
-                  : const Color(0xFFFBBF24), // amber-400
+                  ? const Color(0xFF34D399)
+                  : const Color(0xFFFBBF24),
               shape: BoxShape.circle,
             ),
           ),
@@ -225,6 +237,11 @@ class _StatusPill extends StatelessWidget {
               fontWeight: FontWeight.w700,
             ),
           ),
+          if (tappable) ...[
+            const SizedBox(width: 4),
+            const Icon(Icons.arrow_forward_ios_rounded,
+                color: Colors.white70, size: 10),
+          ],
         ],
       ),
     );

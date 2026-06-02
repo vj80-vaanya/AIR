@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:image_picker/image_picker.dart';
 import '../../../core/constants/colors.dart';
 import '../../../core/constants/spacing.dart';
 import '../../../core/engine/security_engine.dart';
 import '../../../core/utils/extensions.dart';
 import '../../../core/utils/helpers.dart';
+import '../../../services/background/image_scam_analyzer.dart';
 import '../../widgets/common/app_button.dart';
 import '../../widgets/common/risk_badge.dart';
 
@@ -63,13 +65,50 @@ class _ManualScanScreenState extends State<ManualScanScreen>
     _resultAnim.forward();
   }
 
+  static const _maxInputLength = 1500;
+
+  Future<void> _scanImage() async {
+    final picker = ImagePicker();
+    final picked = await picker.pickImage(source: ImageSource.gallery);
+    if (picked == null || !mounted) return;
+
+    _focus.unfocus();
+    setState(() { _scanning = true; _result = null; });
+    _resultAnim.reset();
+
+    final analyzer = ImageScamAnalyzer(SecurityEngine.instance);
+    final r = await analyzer.analyzeImage(picked.path);
+    HapticFeedback.mediumImpact();
+
+    if (!mounted) return;
+    setState(() {
+      _scanning = false;
+      _result   = _ScanResult(
+        riskScore: r.riskScore,
+        category:  r.category,
+        reason:    r.reason,
+        safe:      r.riskScore < 40,
+      );
+    });
+    _resultAnim.forward();
+  }
+
   Future<void> _paste() async {
     final data = await Clipboard.getData(Clipboard.kTextPlain);
     if (data?.text != null) {
-      _ctrl.text = data!.text!;
+      final text = data!.text!;
+      final trimmed = text.length > _maxInputLength
+          ? text.substring(0, _maxInputLength)
+          : text;
+      _ctrl.text = trimmed;
       _ctrl.selection = TextSelection.fromPosition(
-        TextPosition(offset: _ctrl.text.length),
+        TextPosition(offset: trimmed.length),
       );
+      if (text.length > _maxInputLength && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Text trimmed to 1500 characters for analysis.'),
+        ));
+      }
     }
   }
 
@@ -91,11 +130,12 @@ class _ManualScanScreenState extends State<ManualScanScreen>
 
             // ── Text input ─────────────────────────────────────────────────
             _InputCard(
-              ctrl:    _ctrl,
-              focus:   _focus,
-              isDark:  isDark,
-              onPaste: _paste,
-              onClear: () => setState(() { _ctrl.clear(); _result = null; }),
+              ctrl:        _ctrl,
+              focus:       _focus,
+              isDark:      isDark,
+              onPaste:     _paste,
+              onScanImage: _scanImage,
+              onClear:     () => setState(() { _ctrl.clear(); _result = null; }),
             ),
             const SizedBox(height: Spacing.md),
 
@@ -199,8 +239,8 @@ class _Header extends StatelessWidget {
                 ),
                 SizedBox(height: 2),
                 Text(
-                  'Paste any message, SMS, or call transcript to check.',
-                  style: TextStyle(color: Colors.white70, fontSize: 12),
+                  'Paste any suspicious message, email, or WhatsApp forward to check if it\'s a scam. Works offline — no internet needed.',
+                  style: TextStyle(color: Colors.white70, fontSize: 12, height: 1.5),
                 ),
               ],
             ),
@@ -219,12 +259,14 @@ class _InputCard extends StatefulWidget {
     required this.focus,
     required this.isDark,
     required this.onPaste,
+    required this.onScanImage,
     required this.onClear,
   });
   final TextEditingController ctrl;
   final FocusNode             focus;
   final bool                  isDark;
   final VoidCallback          onPaste;
+  final VoidCallback          onScanImage;
   final VoidCallback          onClear;
 
   @override
@@ -266,6 +308,23 @@ class _InputCardState extends State<_InputCard> {
             focusNode:   widget.focus,
             maxLines:    7,
             minLines:    4,
+            maxLength:   1500,
+            maxLengthEnforcement: MaxLengthEnforcement.enforced,
+            buildCounter: (_, {required currentLength, required isFocused, maxLength}) {
+              if (!isFocused || currentLength < 1200) return null;
+              return Padding(
+                padding: const EdgeInsets.only(right: 12, bottom: 4),
+                child: Text(
+                  '$currentLength / $maxLength',
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: currentLength >= 1500
+                        ? AppColors.danger
+                        : AppColors.textSecondary,
+                  ),
+                ),
+              );
+            },
             decoration: const InputDecoration(
               hintText: 'Paste the suspicious message here…\n\nE.g. "Your account will be blocked. Send OTP to verify."',
               border:      InputBorder.none,
@@ -286,12 +345,9 @@ class _InputCardState extends State<_InputCard> {
                 ),
                 const SizedBox(width: 8),
                 _ToolBtn(
-                  icon:  Icons.camera_alt_rounded,
-                  label: 'Screenshot',
-                  onTap: () => ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                        content: Text('Screenshot OCR — use iOS scanner tab.')),
-                  ),
+                  icon:  Icons.image_search_rounded,
+                  label: 'Scan Image',
+                  onTap: widget.onScanImage,
                 ),
                 const Spacer(),
                 if (widget.ctrl.text.isNotEmpty)

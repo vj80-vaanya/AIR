@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/constants/colors.dart';
 import '../../../core/constants/spacing.dart';
 import '../../../core/constants/strings.dart';
+import '../../../data/repositories/settings_repository.dart';
 import '../../providers/sos_provider.dart';
 import '../../widgets/sos/countdown_timer.dart';
 
@@ -56,6 +57,7 @@ class _SOSScreenState extends ConsumerState<SOSScreen>
 
     final isActive    = sosState.state == SOSState.active;
     final isCountdown = sosState.state == SOSState.countdown;
+    final hasContacts = SettingsRepository.emergencyContacts.isNotEmpty;
 
     return Scaffold(
       backgroundColor: const Color(0xFF0D0015),
@@ -113,7 +115,9 @@ class _SOSScreenState extends ConsumerState<SOSScreen>
 
                   // Title
                   Text(
-                    isActive ? 'Alert Sent' : Strings.sosTitle,
+                    isActive
+                        ? (hasContacts ? 'Alert Sent' : 'No Contacts Set')
+                        : Strings.sosTitle,
                     style: const TextStyle(
                       color:         Colors.white,
                       fontSize:      34,
@@ -128,7 +132,7 @@ class _SOSScreenState extends ConsumerState<SOSScreen>
 
                   if (isCountdown) ...[
                     Text(
-                      Strings.sosCountdown,
+                      'Your SOS will be sent in ${sosState.countdown} seconds.\nHold the button below to stop.',
                       style: const TextStyle(
                         color:    Colors.white54,
                         fontSize: 15,
@@ -136,7 +140,11 @@ class _SOSScreenState extends ConsumerState<SOSScreen>
                       ),
                       textAlign: TextAlign.center,
                     ),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 10),
+                    _CountdownContactsRow(),
+                    const SizedBox(height: 8),
+                    _SOSMessagePreview(),
+                    const SizedBox(height: 12),
                     CountdownTimer(seconds: sosState.countdown),
                   ] else if (isActive) ...[
                     Container(
@@ -147,21 +155,35 @@ class _SOSScreenState extends ConsumerState<SOSScreen>
                         color:        Colors.white.withOpacity(0.08),
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(
-                          color: Colors.white.withOpacity(0.12),
+                          color: (hasContacts
+                                  ? const Color(0xFF34D399)
+                                  : AppColors.warning)
+                              .withOpacity(0.4),
                         ),
                       ),
-                      child: const Row(
+                      child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.check_circle_rounded,
-                              color: Color(0xFF34D399), size: 20),
-                          SizedBox(width: 10),
-                          Text(
-                            'Contacts notified. Help is coming.',
-                            style: TextStyle(
-                              color:    Colors.white,
-                              fontSize: 14,
-                              height:   1.4,
+                          Icon(
+                            hasContacts
+                                ? Icons.check_circle_rounded
+                                : Icons.warning_amber_rounded,
+                            color: hasContacts
+                                ? const Color(0xFF34D399)
+                                : AppColors.warning,
+                            size: 20,
+                          ),
+                          const SizedBox(width: 10),
+                          Flexible(
+                            child: Text(
+                              hasContacts
+                                  ? 'Emergency alerts sent. Help is on the way.'
+                                  : 'No emergency contacts set.\nAdd contacts in Settings to use SOS.',
+                              style: const TextStyle(
+                                color:    Colors.white,
+                                fontSize: 14,
+                                height:   1.4,
+                              ),
                             ),
                           ),
                         ],
@@ -173,34 +195,9 @@ class _SOSScreenState extends ConsumerState<SOSScreen>
 
                   // Cancel / Close button
                   if (isCountdown)
-                    GestureDetector(
-                      onTap: () =>
+                    _HoldToCancel(
+                      onCancelled: () =>
                           ref.read(sOSProvider.notifier).cancel(),
-                      child: Container(
-                        width:  double.infinity,
-                        height: 64,
-                        decoration: BoxDecoration(
-                          color:        Colors.white,
-                          borderRadius: BorderRadius.circular(20),
-                          boxShadow: [
-                            BoxShadow(
-                              color:  Colors.black.withOpacity(0.3),
-                              blurRadius: 20,
-                              offset: const Offset(0, 8),
-                            ),
-                          ],
-                        ),
-                        alignment: Alignment.center,
-                        child: Text(
-                          Strings.sosCancel,
-                          style: TextStyle(
-                            color:         AppColors.danger,
-                            fontSize:      18,
-                            fontWeight:    FontWeight.w800,
-                            letterSpacing: 0.3,
-                          ),
-                        ),
-                      ),
                     )
                   else if (isActive)
                     OutlinedButton.icon(
@@ -256,4 +253,150 @@ class _RipplePainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_RipplePainter old) => old.progress != progress;
+}
+
+// ── Contact names shown during countdown ─────────────────────────────────────
+
+class _CountdownContactsRow extends StatelessWidget {
+  const _CountdownContactsRow();
+
+  @override
+  Widget build(BuildContext context) {
+    final contacts = SettingsRepository.emergencyContacts;
+    if (contacts.isEmpty) {
+      return const Text(
+        '⚠ No emergency contacts set',
+        style: TextStyle(color: AppColors.warning, fontSize: 13),
+        textAlign: TextAlign.center,
+      );
+    }
+    final names = contacts
+        .map((c) => c['name']?.isNotEmpty == true ? c['name']! : c['phone'] ?? '')
+        .where((s) => s.isNotEmpty)
+        .toList();
+    final first = names.first;
+    final others = names.length > 1 ? ' + ${names.length - 1} more' : '';
+    return Text(
+      'Calling $first$others',
+      style: const TextStyle(
+        color:      Color(0xFF34D399),
+        fontSize:   13,
+        fontWeight: FontWeight.w600,
+      ),
+      textAlign: TextAlign.center,
+    );
+  }
+}
+
+// ── SMS message preview during countdown ─────────────────────────────────────
+
+class _SOSMessagePreview extends StatelessWidget {
+  const _SOSMessagePreview();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 32),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+      decoration: BoxDecoration(
+        color:        Colors.white.withOpacity(0.06),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: Colors.white.withOpacity(0.10)),
+      ),
+      child: const Text(
+        'SMS: "SOS EMERGENCY! I need immediate help! Please call me right away."',
+        textAlign: TextAlign.center,
+        style: TextStyle(
+          color:    Colors.white38,
+          fontSize: 11,
+          height:   1.45,
+          fontStyle: FontStyle.italic,
+        ),
+      ),
+    );
+  }
+}
+
+// ── Hold-to-cancel button — prevents accidental cancellation ─────────────────
+
+class _HoldToCancel extends StatefulWidget {
+  const _HoldToCancel({required this.onCancelled});
+  final VoidCallback onCancelled;
+
+  @override
+  State<_HoldToCancel> createState() => _HoldToCancelState();
+}
+
+class _HoldToCancelState extends State<_HoldToCancel>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _ctrl;
+  static const _holdDuration = Duration(milliseconds: 1500);
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(vsync: this, duration: _holdDuration);
+    _ctrl.addStatusListener((s) {
+      if (s == AnimationStatus.completed) widget.onCancelled();
+    });
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTapDown:   (_) => _ctrl.forward(),
+      onTapUp:     (_) => _ctrl.reverse(),
+      onTapCancel: ()  => _ctrl.reverse(),
+      child: AnimatedBuilder(
+        animation: _ctrl,
+        builder: (_, __) => Container(
+          width:  double.infinity,
+          height: 64,
+          decoration: BoxDecoration(
+            color:        Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color:      Colors.black.withOpacity(0.3),
+                blurRadius: 20,
+                offset:     const Offset(0, 8),
+              ),
+            ],
+          ),
+          clipBehavior: Clip.hardEdge,
+          child: Stack(
+            children: [
+              // Fill bar showing hold progress
+              FractionallySizedBox(
+                widthFactor: _ctrl.value,
+                child: Container(
+                  decoration: BoxDecoration(
+                    color:        AppColors.danger.withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                ),
+              ),
+              Center(
+                child: Text(
+                  _ctrl.value > 0.05 ? 'Keep holding to cancel…' : 'Hold to Cancel',
+                  style: TextStyle(
+                    color:         AppColors.danger,
+                    fontSize:      17,
+                    fontWeight:    FontWeight.w800,
+                    letterSpacing: 0.2,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }

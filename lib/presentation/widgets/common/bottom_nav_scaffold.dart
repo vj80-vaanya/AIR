@@ -8,7 +8,7 @@ class BottomNavScaffold extends StatelessWidget {
   final Widget child;
 
   static const _tabs = [
-    (label: 'Home',     icon: Icons.shield_outlined,    active: Icons.shield,             path: '/dashboard'),
+    (label: 'Shield',   icon: Icons.shield_outlined,    active: Icons.shield,             path: '/dashboard'),
     (label: 'Alerts',   icon: Icons.notifications_none,  active: Icons.notifications,      path: '/threats'),
     (label: 'Family',   icon: Icons.people_outline,     active: Icons.people,              path: '/family'),
     (label: 'Settings', icon: Icons.tune_outlined,      active: Icons.tune,                path: '/settings'),

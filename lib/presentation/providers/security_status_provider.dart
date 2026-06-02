@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -41,7 +42,8 @@ class SecurityStatus extends _$SecurityStatus {
       notif = await _channel.invokeMethod<bool>('isNotificationListenerEnabled') ?? false;
       access = await _channel.invokeMethod<bool>('isAccessibilityServiceEnabled') ?? false;
     } catch (e) {
-      // Handle or log error
+      debugPrint('[SecurityStatus] Permission check failed: $e');
+      // Remain false — treated as "not granted" so the guardian prompts the user
     }
 
     return SecurityHealth(

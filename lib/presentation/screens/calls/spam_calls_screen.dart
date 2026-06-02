@@ -14,11 +14,16 @@ class SpamCallsScreen extends StatefulWidget {
 class _SpamCallsScreenState extends State<SpamCallsScreen> {
   static const _ch = MethodChannel('ai_security/device_data');
 
+  // In-memory cache — avoids re-analysing 200 calls every time user opens screen
+  static List<_CallEntry>? _cachedCalls;
+  static DateTime?         _cacheTime;
+  static const _cacheTtl   = Duration(minutes: 5);
+
   List<_CallEntry> _calls   = [];
   bool             _loading   = true;
   String?          _error;
   bool             _analysing = false;
-  int              _analyseGen = 0; // incremented on new load to cancel stale loops
+  int              _analyseGen = 0;
 
   static const _typeIncoming = 1;
   static const _typeMissed   = 3;
@@ -29,7 +34,16 @@ class _SpamCallsScreenState extends State<SpamCallsScreen> {
     _load();
   }
 
-  Future<void> _load() async {
+  Future<void> _load({bool forceRefresh = false}) async {
+    // Return cached results if still fresh
+    if (!forceRefresh &&
+        _cachedCalls != null &&
+        _cacheTime != null &&
+        DateTime.now().difference(_cacheTime!) < _cacheTtl) {
+      setState(() { _calls = _cachedCalls!; _loading = false; });
+      return;
+    }
+
     setState(() { _loading = true; _error = null; });
     try {
       final raw = await _ch.invokeListMethod<Map>(
@@ -95,7 +109,12 @@ class _SpamCallsScreenState extends State<SpamCallsScreen> {
         );
       });
     }
-    if (mounted && _analyseGen == gen) setState(() => _analysing = false);
+    if (mounted && _analyseGen == gen) {
+      setState(() => _analysing = false);
+      // Cache completed analysis results
+      _cachedCalls = List.unmodifiable(_calls);
+      _cacheTime   = DateTime.now();
+    }
   }
 
   @override
@@ -129,7 +148,8 @@ class _SpamCallsScreenState extends State<SpamCallsScreen> {
           else
             IconButton(
               icon:      const Icon(Icons.refresh_rounded),
-              onPressed: _load,
+              onPressed: () => _load(forceRefresh: true),
+              tooltip:   'Re-scan call log',
             ),
         ],
       ),
@@ -377,17 +397,20 @@ class _CallCard extends StatelessWidget {
                       fontSize: 12,
                     ),
                   ),
-                  if (call.reason.isNotEmpty)
-                    Text(
-                      call.reason,
-                      style: TextStyle(
-                        color:    color,
-                        fontSize: 11,
-                        height:   1.4,
-                      ),
-                      maxLines:  2,
-                      overflow:  TextOverflow.ellipsis,
+                  Text(
+                    call.riskScore >= 0 && call.reason.isNotEmpty
+                        ? call.reason
+                        : call.riskScore >= 0
+                            ? 'No suspicious patterns found.'
+                            : '',
+                    style: TextStyle(
+                      color:    call.riskScore >= 30 ? color : AppColors.textSecondary,
+                      fontSize: 11,
+                      height:   1.4,
                     ),
+                    maxLines:  2,
+                    overflow:  TextOverflow.ellipsis,
+                  ),
                 ],
               ),
             ),
@@ -413,10 +436,11 @@ class _EmptyView extends StatelessWidget {
             children: const [
               Icon(Icons.call_rounded, size: 64, color: AppColors.textDisabled),
               SizedBox(height: 16),
-              Text('No unknown incoming calls',
+              Text('No unknown calls found',
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
               SizedBox(height: 8),
-              Text('Unknown/unsaved callers will be analysed here.',
+              Text(
+                  'Only calls from people NOT saved in your contacts are shown here. Saved contacts are trusted and not analysed.',
                   textAlign: TextAlign.center,
                   style: TextStyle(color: AppColors.textSecondary)),
             ],

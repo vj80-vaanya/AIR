@@ -52,10 +52,18 @@ class SecurityEngine {
   WordPieceTokenizer? _tokenizer;
   OnnxClassifier?     _classifier;
   bool                _mlReady = false;
-  
+
+  // Configurable block threshold — updated from SettingsRepository at startup
+  // and whenever the user changes the slider in Protection Settings.
+  double _blockThreshold = 75.0;
+
+  void setBlockThreshold(double t) {
+    _blockThreshold = t.clamp(0.0, 100.0);
+  }
+
   final _reputationManager = SenderReputationManager();
-  
-  // Recent threat memory (Last 15 minutes)
+
+  // Recent threat memory (last 15 minutes)
   final List<ThreatResult> _recentCriticalThreats = [];
 
   Future<void> init() async {
@@ -84,17 +92,8 @@ class SecurityEngine {
 
     int    score    = (botRisk * 100).round();
     String category = botRisk > 0 ? 'ROBOCALL_BOT' : 'SAFE';
-    // High-risk international prefixes common in Indian scam calls
-    const riskPrefixes = ['+92', '+880', '+60', '+66', '+856', '+855', '0092'];
-    for (final p in riskPrefixes) {
-      if (phoneNumber.startsWith(p)) {
-        score    = (score + 50).clamp(0, 100);
-        category = 'SUSPICIOUS_CALL';
-        break;
-      }
-    }
 
-    // Unknown / private number
+    // Unknown / private number — mild risk signal, not a block trigger alone
     if (callerId.isEmpty ||
         callerId.toLowerCase() == 'unknown' ||
         callerId.toLowerCase() == 'private') {
@@ -113,7 +112,7 @@ class SecurityEngine {
       riskScore:   score,
       category:    category,
       reason:      score > 0 ? 'Suspicious caller attributes detected' : 'No issues found',
-      shouldBlock: score >= 85,
+      shouldBlock: score >= _blockThreshold,
       confidence:  0.75,
     );
   }
@@ -166,7 +165,7 @@ class SecurityEngine {
       riskScore:   smartScore.round().clamp(0, 100),
       category:    result.category,
       reason:      smartReason,
-      shouldBlock: smartScore >= 80,
+      shouldBlock: smartScore >= _blockThreshold,
       confidence:  result.confidence,
     );
   }
@@ -223,7 +222,7 @@ class SecurityEngine {
       riskScore:   clamped,
       category:    category,
       reason:      _buildReason(pattern, mlScore, mlUsed, socialEng, urlRisk),
-      shouldBlock: clamped >= 75,
+      shouldBlock: clamped >= _blockThreshold,
       confidence:  mlUsed ? 0.92 : 0.80,
     );
   }

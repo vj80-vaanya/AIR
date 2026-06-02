@@ -22,14 +22,24 @@ class FamilyScreen extends ConsumerWidget {
         loading: () => const LoadingIndicator(),
         error:   (e, _) => EmptyState(icon: Icons.error_outline, title: e.toString()),
         data: (members) => members.isEmpty
-            ? EmptyState(
-                icon:        Icons.people_outline,
-                title:       'No family members yet',
-                body:        'Add family members to keep them safe.',
-                action:      () => _showAddSheet(context),
-                actionLabel: 'Add family member',
+            ? Column(
+                children: [
+                  _SosWarningBanner(),
+                  Expanded(
+                    child: EmptyState(
+                      icon:        Icons.people_outline,
+                      title:       'No family members yet',
+                      body:        'Add family members so they receive an SOS alert and your location if you ever press the emergency button.',
+                      action:      () => _showAddSheet(context),
+                      actionLabel: 'Add family member',
+                    ),
+                  ),
+                ],
               )
-            : ListView.builder(
+            : Column(
+              children: [
+                _SosWarningBanner(),
+                Expanded(child: ListView.builder(
                 itemCount:   members.length,
                 itemBuilder: (_, i) {
                   final m = members[i];
@@ -47,7 +57,9 @@ class FamilyScreen extends ConsumerWidget {
                     ),
                   );
                 },
-              ),
+              )),
+              ],
+            )
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _showAddSheet(context),
@@ -89,17 +101,31 @@ class _AddMemberSheetState extends ConsumerState<_AddMemberSheet> {
     setState(() => _saving = true);
 
     final contact = ContactModel(
-      id:            DateTime.now().millisecondsSinceEpoch.toString(),
-      name:          _nameCtr.text.trim(),
-      phone:         _phoneCtr.text.trim(),
+      id:             DateTime.now().millisecondsSinceEpoch.toString(),
+      name:           _nameCtr.text.trim(),
+      phone:          _phoneCtr.text.trim(),
       isFamilyMember: true,
     );
 
-    await ref.read(familyMembersProvider.notifier).addMember(contact);
-
-    if (mounted) {
-      setState(() => _saving = false);
-      Navigator.pop(context);
+    try {
+      await ref.read(familyMembersProvider.notifier).addMember(contact);
+      if (mounted) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('${contact.name} added to your family'),
+          backgroundColor: AppColors.secondary,
+          duration:        const Duration(seconds: 3),
+        ));
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(e.toString().replaceFirst('Exception: ', '')),
+          backgroundColor: Colors.red.shade700,
+        ));
+      }
+    } finally {
+      if (mounted) setState(() => _saving = false);
     }
   }
 
@@ -155,6 +181,33 @@ class _AddMemberSheetState extends ConsumerState<_AddMemberSheet> {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _SosWarningBanner extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(Spacing.md, Spacing.sm, Spacing.md, 0),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        color:        AppColors.warning.withOpacity(0.10),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.warning.withOpacity(0.30)),
+      ),
+      child: Row(children: [
+        const Icon(Icons.info_outline_rounded,
+            color: AppColors.warning, size: 16),
+        const SizedBox(width: 10),
+        const Expanded(
+          child: Text(
+            'To receive SOS alerts, contacts must also be added in Settings → SOS & Fall Settings.',
+            style: TextStyle(
+                color: AppColors.warning, fontSize: 12, height: 1.4),
+          ),
+        ),
+      ]),
     );
   }
 }

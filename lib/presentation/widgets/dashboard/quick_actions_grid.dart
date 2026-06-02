@@ -95,8 +95,6 @@ class _ActionCardState extends State<_ActionCard>
     _ctrl = AnimationController(
       vsync:    this,
       duration: const Duration(milliseconds: 100),
-      lowerBound: 0.0,
-      upperBound: 0.04,
     );
     _scale = Tween<double>(begin: 1.0, end: 0.96)
         .animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut));

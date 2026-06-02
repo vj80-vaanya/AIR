@@ -30,20 +30,33 @@ Future<ProtectionStatus> protectionStatus(ProtectionStatusRef ref) async {
     'SELECT COUNT(*) as cnt FROM threats WHERE timestamp >= ?',
     [startOfDay],
   );
-  final weekRows = await db.rawQuery(
-    'SELECT COUNT(*) as cnt FROM threats WHERE timestamp >= ?',
+  final todayBlockedRows = await db.rawQuery(
+    'SELECT COUNT(*) as cnt FROM threats WHERE timestamp >= ? AND was_blocked = 1',
+    [startOfDay],
+  );
+  final weekBlockedRows = await db.rawQuery(
+    'SELECT COUNT(*) as cnt FROM threats WHERE timestamp >= ? AND was_blocked = 1',
     [startOfWeek],
   );
 
-  final todayCount = (todayRows.first['cnt'] as int?) ?? 0;
-  final weekCount = (weekRows.first['cnt'] as int?) ?? 0;
+  final todayCount   = (todayRows.first['cnt'] as int?) ?? 0;
+  final todayBlocked = (todayBlockedRows.first['cnt'] as int?) ?? 0;
+  final weekBlocked  = (weekBlockedRows.first['cnt'] as int?) ?? 0;
 
-  final score = (100 - (todayCount * 5)).clamp(0, 100);
+  // Score: 25 points per active protection feature, minus 4 per unblocked threat (max -40)
+  int protPoints = 0;
+  if (SettingsRepository.callProtect)  protPoints += 25;
+  if (SettingsRepository.smsProtect)   protPoints += 25;
+  if (SettingsRepository.waProtect)    protPoints += 25;
+  if (SettingsRepository.emailProtect) protPoints += 25;
+  final unblocked     = todayCount - todayBlocked;
+  final threatPenalty = (unblocked * 4).clamp(0, 40);
+  final score         = (protPoints - threatPenalty).clamp(0, 100);
 
   final status = ProtectionStatus(
     score: score,
-    threatsBlockedToday: todayCount,
-    threatsBlockedWeek: weekCount,
+    threatsBlockedToday: todayBlocked,
+    threatsBlockedWeek: weekBlocked,
     callProtectionActive:     SettingsRepository.callProtect,
     smsProtectionActive:      SettingsRepository.smsProtect,
     whatsappProtectionActive: SettingsRepository.waProtect,
@@ -115,14 +128,14 @@ class WeeklyStats extends _$WeeklyStats {
         [startOfWeek],
       );
       final flagged = await db.rawQuery(
-        'SELECT COUNT(*) as cnt FROM threats WHERE timestamp >= ? AND was_blocked = 0',
+        'SELECT COUNT(*) as cnt FROM threats WHERE timestamp >= ? AND was_blocked = 0 AND risk_score >= 60',
         [startOfWeek],
       );
 
       state = AsyncData({
         'blocked': (blocked.first['cnt'] as int?) ?? 0,
         'flagged': (flagged.first['cnt'] as int?) ?? 0,
-        'safe': 0,
+        'safe':    0,
       });
     } catch (e) {
       state = AsyncError(e, StackTrace.current);

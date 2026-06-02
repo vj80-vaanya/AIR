@@ -18,7 +18,6 @@ class TextNormalizer {
       '@': 'a',
       '!': 'i',
       r'$': 's',
-      'v': 'u', // common in some scripts
     };
 
     substitutions.forEach((old, replacement) {

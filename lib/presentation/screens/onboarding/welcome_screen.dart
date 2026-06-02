@@ -4,6 +4,7 @@ import '../../../core/constants/colors.dart';
 import '../../../core/constants/spacing.dart';
 import '../../../core/constants/strings.dart';
 import '../../widgets/common/app_button.dart';
+import '../../widgets/common/onboarding_step_bar.dart';
 
 class WelcomeScreen extends StatefulWidget {
   const WelcomeScreen({super.key});
@@ -104,6 +105,7 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                   padding: const EdgeInsets.symmetric(horizontal: Spacing.lg),
                   child: Column(
                     children: [
+                      const OnboardingStepBar(step: 1),
                       const Spacer(flex: 2),
 
                       // Shield logo
@@ -175,8 +177,8 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                               icon: Icons.flash_on_rounded,
                               text: 'Real-Time'),
                           _FeaturePill(
-                              icon: Icons.language_rounded,
-                              text: 'Hindi & English'),
+                              icon: Icons.people_rounded,
+                              text: 'Made for India'),
                         ],
                       ),
 
@@ -191,9 +193,9 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                       ),
                       const SizedBox(height: Spacing.md),
                       TextButton(
-                        onPressed: () => context.go('/dashboard'),
+                        onPressed: () => _confirmSkip(context),
                         child: const Text(
-                          'Skip for now',
+                          'Skip setup',
                           style: TextStyle(color: Colors.white54),
                         ),
                       ),
@@ -207,6 +209,34 @@ class _WelcomeScreenState extends State<WelcomeScreen>
         ],
       ),
     );
+  }
+
+  Future<void> _confirmSkip(BuildContext context) async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Skip setup?'),
+        content: const Text(
+          'Without completing setup:\n\n'
+          '• Emergency contacts won\'t be notified if you press SOS\n'
+          '• Some permissions may not be active\n\n'
+          'You can complete setup later in Settings.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Go back'),
+          ),
+          OutlinedButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Skip anyway'),
+          ),
+        ],
+      ),
+    );
+    // Skip goes to permissions so at least basic protection can be configured,
+    // not straight to dashboard with zero permissions granted.
+    if (ok == true && context.mounted) context.go('/onboarding/permissions');
   }
 }
 
@@ -265,3 +295,4 @@ class _FeaturePill extends StatelessWidget {
     );
   }
 }
+
