@@ -1,5 +1,6 @@
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../core/events/threat_event_bus.dart';
 import '../../domain/entities/protection_status.dart';
@@ -43,12 +44,15 @@ Future<ProtectionStatus> protectionStatus(ProtectionStatusRef ref) async {
   final todayBlocked = (todayBlockedRows.first['cnt'] as int?) ?? 0;
   final weekBlocked  = (weekBlockedRows.first['cnt'] as int?) ?? 0;
 
-  // Score: 25 points per active protection feature, minus 4 per unblocked threat (max -40)
+  // Score: 25 points per feature that is BOTH toggled on AND has its permission granted
+  final smsGranted   = await Permission.sms.isGranted;
+  final phoneGranted = await Permission.phone.isGranted;
+
   int protPoints = 0;
-  if (SettingsRepository.callProtect)  protPoints += 25;
-  if (SettingsRepository.smsProtect)   protPoints += 25;
-  if (SettingsRepository.waProtect)    protPoints += 25;
-  if (SettingsRepository.emailProtect) protPoints += 25;
+  if (SettingsRepository.callProtect  && phoneGranted) protPoints += 25;
+  if (SettingsRepository.smsProtect   && smsGranted)   protPoints += 25;
+  if (SettingsRepository.waProtect)                    protPoints += 25; // permission checked by NotificationListener
+  if (SettingsRepository.emailProtect)                 protPoints += 25;
   final unblocked     = todayCount - todayBlocked;
   final threatPenalty = (unblocked * 4).clamp(0, 40);
   final score         = (protPoints - threatPenalty).clamp(0, 100);

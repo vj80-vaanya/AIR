@@ -121,6 +121,36 @@ class _EmptyAlerts extends StatelessWidget {
                 height:   1.5,
               ),
             ),
+            if (channel == null) ...[
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                decoration: BoxDecoration(
+                  color:        AppColors.secondary.withOpacity(0.08),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 7, height: 7,
+                      decoration: const BoxDecoration(
+                        color: AppColors.secondary, shape: BoxShape.circle,
+                      ),
+                    ),
+                    const SizedBox(width: 7),
+                    const Text(
+                      'Active monitoring — calls, SMS & WhatsApp',
+                      style: TextStyle(
+                        color:      AppColors.secondary,
+                        fontSize:   12,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ],
         ),
       ),

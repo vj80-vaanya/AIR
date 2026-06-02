@@ -74,7 +74,7 @@ class ForegroundSecurityService : Service() {
         return NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle("AI Security is active")
             .setContentText("Monitoring calls, SMS & WhatsApp for scams")
-            .setSmallIcon(android.R.drawable.ic_dialog_info) // stable AOSP drawable
+            .setSmallIcon(R.drawable.ic_notification)
             .setContentIntent(pi)
             .setOngoing(true)
             .setSilent(true)

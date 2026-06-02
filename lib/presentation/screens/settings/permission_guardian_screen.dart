@@ -81,6 +81,7 @@ class _Body extends ConsumerWidget {
     final granted  = [
       health.smsGranted,
       health.phoneGranted,
+      health.callLogGranted,
       health.notificationAccessGranted,
       health.accessibilityGranted,
     ].where((v) => v).length;
@@ -103,6 +104,15 @@ class _Body extends ConsumerWidget {
         isGranted:   health.phoneGranted,
         type:        _PermType.runtime,
         onEnable:    () => notifier.requestPhone(),
+      ),
+      _PermDef(
+        icon:        Icons.call_rounded,
+        color:       AppColors.secondary,
+        title:       'Call History Access',
+        why:         'Allows the Call Log Analyser to read caller phone numbers for full scam analysis. Without this, call numbers appear blank.',
+        isGranted:   health.callLogGranted,
+        type:        _PermType.runtime,
+        onEnable:    () => notifier.requestCallLog(),
       ),
       _PermDef(
         icon:        Icons.notifications_rounded,
@@ -151,7 +161,7 @@ class _Body extends ConsumerWidget {
           Spacing.md, Spacing.sm, Spacing.md, 100),
       children: [
         // ── Progress header ────────────────────────────────────────────────
-        _ProgressHeader(granted: granted, total: 4, isDark: isDark),
+        _ProgressHeader(granted: granted, total: 5, isDark: isDark),
         const SizedBox(height: Spacing.lg),
 
         // ── Permission tiles ───────────────────────────────────────────────

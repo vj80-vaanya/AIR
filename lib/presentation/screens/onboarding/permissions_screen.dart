@@ -19,10 +19,11 @@ class _PermissionsScreenState extends ConsumerState<PermissionsScreen>
 
   // Track individual grant status
   final Map<String, bool> _granted = {
-    'phone': false,
-    'sms':   false,
-    'loc':   false,
-    'notif': false,
+    'phone':    false,
+    'callLog':  false,
+    'sms':      false,
+    'loc':      false,
+    'notif':    false,
   };
 
   bool _loading = false;
@@ -46,16 +47,19 @@ class _PermissionsScreenState extends ConsumerState<PermissionsScreen>
   }
 
   Future<void> _checkAll() async {
-    final phone = await Permission.phone.isGranted;
-    final sms   = await Permission.sms.isGranted;
-    final loc   = await Permission.location.isGranted;
-    final notif = await Permission.notification.isGranted;
+    final phone   = await Permission.phone.isGranted;
+    final callLog = await Permission.contacts.isGranted ||
+        await Permission.phone.isGranted; // READ_CALL_LOG is in the phone group
+    final sms     = await Permission.sms.isGranted;
+    final loc     = await Permission.location.isGranted;
+    final notif   = await Permission.notification.isGranted;
     if (mounted) {
       setState(() {
-        _granted['phone'] = phone;
-        _granted['sms']   = sms;
-        _granted['loc']   = loc;
-        _granted['notif'] = notif;
+        _granted['phone']   = phone;
+        _granted['callLog'] = callLog;
+        _granted['sms']     = sms;
+        _granted['loc']     = loc;
+        _granted['notif']   = notif;
       });
     }
   }
@@ -76,6 +80,9 @@ class _PermissionsScreenState extends ConsumerState<PermissionsScreen>
       Permission.location,
       Permission.notification,
     ].request();
+    // READ_CALL_LOG is in the phone permission group on Android;
+    // request it explicitly in case it wasn't bundled
+    await Permission.contacts.request();
     await _checkAll(); // already has mounted guard
     if (!mounted) return;
     setState(() => _loading = false);
