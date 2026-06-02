@@ -213,7 +213,13 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       ),
 
       // ── SOS FAB ─────────────────────────────────────────────────────────
-      floatingActionButton: _SosFab(),
+      // Offset from bottom to clear the outer BottomNavScaffold bar
+      // (68px container + 20px bottom padding + 8px extra gap = 96px)
+      floatingActionButton: Padding(
+        padding: const EdgeInsets.only(bottom: 96),
+        child: _SosFab(),
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
     );
   }
 }

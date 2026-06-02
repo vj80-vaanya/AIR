@@ -64,7 +64,28 @@ object SecurityPlugin {
                         result.success(true)
                     }
                     "openAccessibilitySettings" -> {
-                        context.startActivity(Intent(android.provider.Settings.ACTION_ACCESSIBILITY_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+                        val pkgName = context.packageName
+                        var opened  = false
+                        // Android 9+: try to deep-link directly to our service's settings page
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                            try {
+                                val intent = Intent(android.provider.Settings.ACTION_ACCESSIBILITY_SETTINGS).apply {
+                                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                    val args = android.os.Bundle()
+                                    args.putString(":settings:fragment_args_key", "$pkgName/.DeepSecurityService")
+                                    putExtra(":settings:show_fragment_args", args)
+                                }
+                                context.startActivity(intent)
+                                opened = true
+                            } catch (_: Exception) {}
+                        }
+                        // Fallback: generic accessibility settings
+                        if (!opened) {
+                            context.startActivity(
+                                Intent(android.provider.Settings.ACTION_ACCESSIBILITY_SETTINGS)
+                                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                            )
+                        }
                         result.success(true)
                     }
                     else -> result.notImplemented()
