@@ -80,6 +80,11 @@
 
         <meta-data android:name="com.google.android.geo.API_KEY" android:value=""/>
         <meta-data android:name="flutterEmbedding" android:value="2"/>
+        <!-- Use TextureView instead of SurfaceView to avoid BLASTBufferQueue
+             overflow on VIVO/iQOO devices that cap render buffer slots at 7 -->
+        <meta-data
+            android:name="io.flutter.embedding.android.SurfaceType"
+            android:value="texture"/>
 
         <!-- Manifest-declared SMS receiver — works even when app is killed -->
         <receiver android:name=".SmsReceiver"

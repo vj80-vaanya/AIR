@@ -25,7 +25,7 @@ class _WelcomeScreenState extends State<WelcomeScreen>
 
     _bgCtrl = AnimationController(
       vsync:    this,
-      duration: const Duration(seconds: 8),
+      duration: const Duration(seconds: 14), // slow background = fewer GPU frames
     )..repeat(reverse: true);
 
     _contentCtrl = AnimationController(

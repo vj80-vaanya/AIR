@@ -474,7 +474,7 @@ class _AnimatedWarningBadgeState extends State<_AnimatedWarningBadge>
     super.initState();
     _ctrl = AnimationController(
       vsync:    this,
-      duration: const Duration(milliseconds: 900),
+      duration: const Duration(milliseconds: 1600), // slower = fewer GPU frames
     )..repeat(reverse: true);
   }
 
@@ -486,14 +486,16 @@ class _AnimatedWarningBadgeState extends State<_AnimatedWarningBadge>
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _ctrl,
-      builder: (_, __) => Opacity(
-        opacity: 0.6 + _ctrl.value * 0.4,
-        child: IconButton(
-          icon: const Icon(Icons.warning_amber_rounded, color: AppColors.warning),
-          onPressed: widget.onTap,
-          tooltip:   'Protection incomplete',
+    return RepaintBoundary(
+      child: AnimatedBuilder(
+        animation: _ctrl,
+        builder: (_, __) => Opacity(
+          opacity: 0.6 + _ctrl.value * 0.4,
+          child: IconButton(
+            icon: const Icon(Icons.warning_amber_rounded, color: AppColors.warning),
+            onPressed: widget.onTap,
+            tooltip:   'Protection incomplete',
+          ),
         ),
       ),
     );
@@ -515,7 +517,7 @@ class _SosFabState extends State<_SosFab>
     super.initState();
     _pulseCtrl = AnimationController(
       vsync:    this,
-      duration: const Duration(milliseconds: 1200),
+      duration: const Duration(milliseconds: 1800),
     )..repeat(reverse: true);
     _pulse = Tween<double>(begin: 1.0, end: 1.06)
         .animate(CurvedAnimation(parent: _pulseCtrl, curve: Curves.easeInOut));
@@ -537,7 +539,8 @@ class _SosFabState extends State<_SosFab>
 
   @override
   Widget build(BuildContext context) {
-    return ScaleTransition(
+    return RepaintBoundary(
+      child: ScaleTransition(
       scale: _pulse,
       child: Container(
         height: 60,
@@ -582,7 +585,7 @@ class _SosFabState extends State<_SosFab>
           ),
         ),
       ),
-    );
+    ));  // closes RepaintBoundary
   }
 }
 
