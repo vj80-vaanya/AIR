@@ -244,13 +244,19 @@ object SecurityPlugin {
             sink = events
             receiver = object : BroadcastReceiver() {
                 override fun onReceive(context: Context, intent: Intent) {
-                    val state = intent.getStringExtra(TelephonyManager.EXTRA_STATE)
+                    val state  = intent.getStringExtra(TelephonyManager.EXTRA_STATE)
                     val number = intent.getStringExtra(TelephonyManager.EXTRA_INCOMING_NUMBER) ?: ""
                     if (state == TelephonyManager.EXTRA_STATE_RINGING) {
+                        // Native pre-analysis: score the call in Kotlin so Flutter
+                        // receives enriched data rather than doing all work itself.
+                        val nativeScore = if (number.isNotEmpty()) {
+                            ThreatEngine.analyzeText(number).riskScore
+                        } else 0
                         sink?.success(mapOf(
-                            "phoneNumber" to number,
-                            "callerId"    to "",
+                            "phoneNumber"    to number,
+                            "callerId"       to "",
                             "isKnownContact" to false,
+                            "nativeScore"    to nativeScore,
                         ))
                     }
                 }

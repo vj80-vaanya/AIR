@@ -9,6 +9,8 @@ class MainActivity : FlutterActivity() {
         SecurityPlugin.register(flutterEngine, this)
         MediaCleanupPlugin.register(flutterEngine, this)
         DeviceDataPlugin.register(flutterEngine, this)
+        // Initialise the native Kotlin threat engine so it's ready for background work
+        ThreatEngine.init(this)
         // Keep the security engine alive in background
         ForegroundSecurityService.start(this)
     }

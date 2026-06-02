@@ -8,57 +8,58 @@ import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.telephony.SmsMessage
+import android.util.Log
 import androidx.core.app.NotificationCompat
 import java.util.Random
 
 /**
- * Manifest-declared SMS receiver — captures incoming SMS even when the
- * Flutter/Dart isolate is paused or the app is fully killed.
- *
- * Performs lightweight keyword analysis in Kotlin so high-risk messages
- * trigger a notification without needing Dart to be awake.
+ * Manifest-declared receiver — captures SMS even when the app is fully killed.
+ * Uses the native ThreatEngine (Kotlin port of the Dart SecurityEngine) so
+ * full pattern matching + ML inference work in the background.
  */
 class SmsReceiver : BroadcastReceiver() {
 
     companion object {
+        private const val TAG        = "SmsReceiver"
         private const val CHANNEL_ID = "sms_threats"
-
-        // High-signal Indian scam keywords — intentionally short list to avoid false positives
-        private val SCAM_KEYWORDS = listOf(
-            "otp", "do not share", "never share",
-            "kyc", "account blocked", "account suspended",
-            "digital arrest", "cbi", "cybercrime",
-            "click here", "link expires", "verify now",
-            "won", "lottery", "prize", "lucky draw",
-            "investment", "guaranteed return",
-            "aadhaar", "pan card", "income tax",
-        )
     }
 
     override fun onReceive(context: Context, intent: Intent) {
         if (intent.action != "android.provider.Telephony.SMS_RECEIVED") return
 
+        // Initialise ML engine if this is the first time (cold start without app open)
+        if (!ThreatEngine.mlReady) ThreatEngine.init(context)
+
         @Suppress("DEPRECATION")
         val pdus = intent.extras?.get("pdus") as? Array<*> ?: return
+        val formatKey = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) "format" else null
+        val format    = formatKey?.let { intent.extras?.getString(it) }
 
         for (pdu in pdus) {
             val sms = try {
-                SmsMessage.createFromPdu(pdu as ByteArray)
+                if (format != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.M)
+                    SmsMessage.createFromPdu(pdu as ByteArray, format)
+                else
+                    @Suppress("DEPRECATION")
+                    SmsMessage.createFromPdu(pdu as ByteArray)
             } catch (e: Exception) { continue }
 
-            val body   = sms.displayMessageBody?.lowercase() ?: continue
+            val body   = sms.displayMessageBody   ?: continue
             val sender = sms.displayOriginatingAddress ?: "Unknown"
 
-            val matchCount = SCAM_KEYWORDS.count { body.contains(it) }
-            if (matchCount >= 2) {
-                showThreatNotification(context, sender, sms.displayMessageBody ?: "")
-                // Also forward to the running Flutter engine if it's alive
-                forwardToFlutter(context, sender, sms.displayMessageBody ?: "")
+            Log.d(TAG, "SMS from $sender — analysing")
+
+            val result = ThreatEngine.analyzeText(body)
+
+            if (result.riskScore >= 60) {
+                Log.d(TAG, "Threat detected: score=${result.riskScore} cat=${result.category}")
+                showThreatNotification(context, sender, body, result)
+                forwardToFlutter(context, sender, body, result)
             }
         }
     }
 
-    private fun showThreatNotification(context: Context, sender: String, body: String) {
+    private fun showThreatNotification(context: Context, sender: String, body: String, result: ThreatResult) {
         createChannel(context)
 
         val tapIntent = context.packageManager
@@ -69,11 +70,18 @@ class SmsReceiver : BroadcastReceiver() {
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
         )
 
-        val notification = NotificationCompat.Builder(context, CHANNEL_ID)
+        val title = when {
+            result.riskScore >= 85 -> "⚠ SCAM ALERT from $sender"
+            result.riskScore >= 60 -> "Suspicious SMS from $sender"
+            else                   -> "SMS flagged from $sender"
+        }
+
+        val notification = androidx.core.app.NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_notification)
-            .setContentTitle("Suspicious SMS from $sender")
-            .setContentText("This message contains scam patterns. Tap to review.")
-            .setStyle(NotificationCompat.BigTextStyle().bigText(body.take(200)))
+            .setContentTitle(title)
+            .setContentText(result.reason)
+            .setStyle(NotificationCompat.BigTextStyle()
+                .bigText("${result.reason}\n\nMessage: ${body.take(200)}"))
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setContentIntent(pi)
             .setAutoCancel(true)
@@ -83,12 +91,16 @@ class SmsReceiver : BroadcastReceiver() {
             .notify(Random().nextInt(9000), notification)
     }
 
-    private fun forwardToFlutter(context: Context, sender: String, body: String) {
-        // Broadcast to the running app so Flutter can do full ML analysis
+    /** Broadcast so the running Flutter engine can store the threat in SQLite. */
+    private fun forwardToFlutter(context: Context, sender: String, body: String, result: ThreatResult) {
         val intent = Intent("com.aisecurity.app.SMS_THREAT_DETECTED").apply {
             setPackage(context.packageName)
-            putExtra("sender", sender)
-            putExtra("body",   body)
+            putExtra("sender",     sender)
+            putExtra("body",       body)
+            putExtra("riskScore",  result.riskScore)
+            putExtra("category",   result.category)
+            putExtra("reason",     result.reason)
+            putExtra("shouldBlock",result.shouldBlock)
         }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             context.sendBroadcast(intent, null)
@@ -99,15 +111,12 @@ class SmsReceiver : BroadcastReceiver() {
 
     private fun createChannel(context: Context) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val ch = NotificationChannel(
-                CHANNEL_ID, "SMS Threat Alerts",
-                NotificationManager.IMPORTANCE_HIGH,
-            ).apply {
-                description = "Alerts for suspicious SMS detected while app is in background"
+            val ch = NotificationChannel(CHANNEL_ID, "SMS Threat Alerts",
+                NotificationManager.IMPORTANCE_HIGH).apply {
+                description = "Alerts for suspicious SMS detected in the background"
                 enableVibration(true)
             }
-            context.getSystemService(NotificationManager::class.java)
-                .createNotificationChannel(ch)
+            context.getSystemService(NotificationManager::class.java).createNotificationChannel(ch)
         }
     }
 }
