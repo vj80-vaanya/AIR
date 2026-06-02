@@ -27,8 +27,8 @@ class SmsReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         if (intent.action != "android.provider.Telephony.SMS_RECEIVED") return
 
-        // Initialise ML engine if this is the first time (cold start without app open)
-        if (!ThreatEngine.mlReady) ThreatEngine.init(context)
+        // Ensure engine is initialised (cold start without the app being open)
+        ThreatEngine.init(context)
 
         @Suppress("DEPRECATION")
         val pdus = intent.extras?.get("pdus") as? Array<*> ?: return

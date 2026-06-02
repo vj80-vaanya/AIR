@@ -40,14 +40,6 @@ android {
         }
     }
 
-    // The Flutter onnxruntime plugin and our explicit dependency both include
-    // libonnxruntime.so — they are identical binaries; just keep the first one found.
-    packagingOptions {
-        pickFirst 'lib/arm64-v8a/libonnxruntime.so'
-        pickFirst 'lib/armeabi-v7a/libonnxruntime.so'
-        pickFirst 'lib/x86_64/libonnxruntime.so'
-        pickFirst 'lib/x86/libonnxruntime.so'
-    }
 }
 
 flutter {
@@ -57,7 +49,6 @@ flutter {
 dependencies {
     coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.1.4'
     implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3'
-    // ONNX Runtime — needed at runtime so ThreatEngine.kt can call OrtEnvironment etc.
-    // packagingOptions above resolves the duplicate .so with the Flutter onnxruntime plugin.
-    implementation 'com.microsoft.onnxruntime:onnxruntime-android:1.19.2'
+    // No separate onnxruntime-android dep needed — ONNX inference stays in Dart/Flutter.
+    // Native ThreatEngine.kt uses pattern + behavioral + URL analysis only (no ML version conflicts).
 }
