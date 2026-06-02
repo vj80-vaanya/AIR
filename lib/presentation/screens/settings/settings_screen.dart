@@ -168,6 +168,7 @@ class SettingsScreen extends StatelessWidget {
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
+        scrollable: true,
         title: const Text('Report a Cybercrime'),
         content: Column(
           mainAxisSize: MainAxisSize.min,

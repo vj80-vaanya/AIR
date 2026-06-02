@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/constants/colors.dart';
 import '../../../core/constants/spacing.dart';
 import '../../../data/repositories/settings_repository.dart';
+import '../../../services/background/fall_detection_service.dart';
 import '../../providers/settings_provider.dart';
 import '../../providers/sos_provider.dart';
 
@@ -230,26 +231,39 @@ class _SOSSettingsScreenState extends ConsumerState<SOSSettingsScreen> {
     return '${h - 12}:00 PM';
   }
 
-  void _testFallDetection(BuildContext context) {
-    showDialog(
+  Future<void> _testFallDetection(BuildContext context) async {
+    final confirmed = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
         title: const Text('Test Fall Detection'),
         content: const Text(
-          'To test fall detection:\n\n'
-          '1. Hold your phone normally\n'
-          '2. Quickly drop it onto a soft surface (pillow or sofa)\n'
-          '3. You should hear a notification within 2 seconds\n\n'
-          'The app will send an SOS if you don\'t respond within 30 seconds after a fall.',
+          'This will immediately trigger a test fall alert.\n\n'
+          'You will see a "Fall detected" notification on your phone.\n\n'
+          'No SOS will be sent to your contacts during this test.',
         ),
         actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
           FilledButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Got it'),
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Run Test'),
           ),
         ],
       ),
     );
+    if (confirmed != true) return;
+    await FallDetectionService.instance.simulateFall();
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Test notification sent — check your notification bar'),
+          backgroundColor: AppColors.secondary,
+          duration: Duration(seconds: 3),
+        ),
+      );
+    }
   }
 
   Future<void> _runTestSOS(BuildContext context, WidgetRef ref) async {

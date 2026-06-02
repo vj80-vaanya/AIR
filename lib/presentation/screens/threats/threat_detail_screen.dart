@@ -331,6 +331,7 @@ class _ThreatDetailScreenState extends ConsumerState<ThreatDetailScreen> {
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
+        scrollable: true,
         title: const Text('Report to Cybercrime Helpline'),
         content: Column(
           mainAxisSize: MainAxisSize.min,

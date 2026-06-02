@@ -131,6 +131,7 @@ class _SOSSetupScreenState extends State<SOSSetupScreen> {
       },
       child: Scaffold(
         appBar: AppBar(title: const Text('SOS Contacts')),
+        resizeToAvoidBottomInset: true,
         body: Form(
           key: _formKey,
           child: Column(

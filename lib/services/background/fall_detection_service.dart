@@ -32,6 +32,14 @@ class FallDetectionService {
     debugPrint('[FallDetection] SOS cancelled by user');
   }
 
+  /// Simulates a fall for testing — bypasses cooldown so it always fires.
+  Future<void> simulateFall() async {
+    _cooldown   = false; // bypass cooldown for test
+    _sosPending = false; // don't actually send SOS in test mode
+    debugPrint('[FallDetection] Simulated fall — showing notification only, no SOS sent');
+    await NotificationService.instance.showFallDetected();
+  }
+
   void start() {
     _accelSub?.cancel();
     _accelSub = accelerometerEventStream().listen(_onAccel);
