@@ -53,6 +53,13 @@ class SmsReceiver : BroadcastReceiver() {
 
             if (result.riskScore >= 60) {
                 Log.d(TAG, "Threat detected: score=${result.riskScore} cat=${result.category}")
+                // Overlay — visible even if user is inside WhatsApp or any other app
+                OverlayService.showThreat(
+                    context,
+                    "⚠ Scam SMS from $sender",
+                    result.reason.take(100),
+                    result.category,
+                )
                 showThreatNotification(context, sender, body, result)
                 forwardToFlutter(context, sender, body, result)
             }

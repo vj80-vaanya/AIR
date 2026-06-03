@@ -52,6 +52,9 @@
     <uses-permission android:name="android.permission.VIBRATE"/>
     <uses-permission android:name="android.permission.RECORD_AUDIO"/>
 
+    <!-- Draw floating threat overlay on top of any app -->
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW"/>
+
     <application
         android:label="AI Security"
         android:name="${applicationName}"
@@ -83,6 +86,11 @@
         <!-- SurfaceView (default) — TextureView caused black screen after
              dialog dismiss on this VIVO/iQOO device. The BLASTBufferQueue
              warnings from SurfaceView are cosmetic-only and non-fatal. -->
+
+        <!-- Floating threat overlay service -->
+        <service android:name=".OverlayService"
+                 android:foregroundServiceType="dataSync"
+                 android:exported="false"/>
 
         <!-- Manifest-declared SMS receiver — works even when app is killed -->
         <receiver android:name=".SmsReceiver"

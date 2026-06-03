@@ -11,6 +11,7 @@ class SecurityHealth {
   final bool callLogGranted;
   final bool notificationAccessGranted;
   final bool accessibilityGranted;
+  final bool overlayGranted;
 
   SecurityHealth({
     required this.smsGranted,
@@ -18,11 +19,12 @@ class SecurityHealth {
     required this.callLogGranted,
     required this.notificationAccessGranted,
     required this.accessibilityGranted,
+    required this.overlayGranted,
   });
 
   bool get isFullyProtected =>
       smsGranted && phoneGranted && callLogGranted &&
-      notificationAccessGranted && accessibilityGranted;
+      notificationAccessGranted && accessibilityGranted && overlayGranted;
 }
 
 @riverpod
@@ -40,12 +42,14 @@ class SecurityStatus extends _$SecurityStatus {
     // READ_CALL_LOG is in the phone permission group; treat as granted if phone is
     final callLog = phone || await Permission.contacts.isGranted;
 
-    bool notif  = false;
-    bool access = false;
+    bool notif   = false;
+    bool access  = false;
+    bool overlay = false;
 
     try {
-      notif  = await _channel.invokeMethod<bool>('isNotificationListenerEnabled')  ?? false;
-      access = await _channel.invokeMethod<bool>('isAccessibilityServiceEnabled') ?? false;
+      notif   = await _channel.invokeMethod<bool>('isNotificationListenerEnabled')  ?? false;
+      access  = await _channel.invokeMethod<bool>('isAccessibilityServiceEnabled') ?? false;
+      overlay = await _channel.invokeMethod<bool>('isOverlayPermissionGranted')    ?? false;
     } catch (e) {
       debugPrint('[SecurityStatus] Permission check failed: $e');
     }
@@ -56,6 +60,7 @@ class SecurityStatus extends _$SecurityStatus {
       callLogGranted:               callLog,
       notificationAccessGranted:    notif,
       accessibilityGranted:         access,
+      overlayGranted:               overlay,
     );
   }
 
@@ -83,9 +88,13 @@ class SecurityStatus extends _$SecurityStatus {
   }
 
   Future<void> requestCallLog() async {
-    // READ_CALL_LOG is bundled with phone on most Android versions;
-    // request phone + contacts to cover all cases
     await [Permission.phone, Permission.contacts].request();
+    await refresh();
+  }
+
+  Future<void> requestOverlay() async {
+    await _channel.invokeMethod('requestOverlayPermission');
+    await Future.delayed(const Duration(seconds: 2));
     await refresh();
   }
 }

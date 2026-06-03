@@ -59,6 +59,20 @@ class NotificationReceiverService : NotificationListenerService() {
             val result = ThreatEngine.analyzeText("$title $body")
             if (result.riskScore >= 60) {
                 Log.d(TAG, "Threat in notification: score=${result.riskScore} cat=${result.category}")
+                // Show overlay on top of WhatsApp/Telegram so user sees warning immediately
+                val appLabel = when {
+                    pkg.contains("whatsapp")  -> "WhatsApp"
+                    pkg.contains("telegram")  -> "Telegram"
+                    pkg.contains("instagram") -> "Instagram"
+                    pkg.contains("signal")    -> "Signal"
+                    else                      -> "App"
+                }
+                OverlayService.showThreat(
+                    this,
+                    "⚠ Scam in $appLabel — $title",
+                    result.reason.take(100),
+                    result.category,
+                )
                 showThreatNotification(title, body, pkg, result)
             }
         }

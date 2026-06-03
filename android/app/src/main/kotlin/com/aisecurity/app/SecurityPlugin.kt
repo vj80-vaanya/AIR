@@ -63,6 +63,13 @@ object SecurityPlugin {
                         context.startActivity(Intent("android.settings.ACTION_NOTIFICATION_LISTENER_SETTINGS").addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
                         result.success(true)
                     }
+                    "isOverlayPermissionGranted" -> {
+                        result.success(OverlayService.hasPermission(context))
+                    }
+                    "requestOverlayPermission" -> {
+                        OverlayService.requestPermission(context)
+                        result.success(true)
+                    }
                     "openAccessibilitySettings" -> {
                         val pkgName = context.packageName
                         var opened  = false
@@ -268,11 +275,19 @@ object SecurityPlugin {
                     val state  = intent.getStringExtra(TelephonyManager.EXTRA_STATE)
                     val number = intent.getStringExtra(TelephonyManager.EXTRA_INCOMING_NUMBER) ?: ""
                     if (state == TelephonyManager.EXTRA_STATE_RINGING) {
-                        // Native pre-analysis: score the call in Kotlin so Flutter
-                        // receives enriched data rather than doing all work itself.
-                        val nativeScore = if (number.isNotEmpty()) {
-                            ThreatEngine.analyzeText(number).riskScore
-                        } else 0
+                        val threat      = if (number.isNotEmpty()) ThreatEngine.analyzeText(number) else null
+                        val nativeScore = threat?.riskScore ?: 0
+
+                        // Show overlay on top of any screen for high-risk incoming calls
+                        if (nativeScore >= 65 && threat != null) {
+                            OverlayService.showThreat(
+                                ctx,
+                                "⚠ Suspicious Incoming Call",
+                                "Risk $nativeScore — ${threat.reason.take(90)}",
+                                threat.category,
+                            )
+                        }
+
                         sink?.success(mapOf(
                             "phoneNumber"    to number,
                             "callerId"       to "",

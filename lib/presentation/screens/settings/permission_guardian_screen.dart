@@ -84,6 +84,7 @@ class _Body extends ConsumerWidget {
       health.callLogGranted,
       health.notificationAccessGranted,
       health.accessibilityGranted,
+      health.overlayGranted,
     ].where((v) => v).length;
 
     final perms = [
@@ -154,6 +155,25 @@ class _Body extends ConsumerWidget {
           onOpen: () => notifier.requestAccessibility(),
         ),
       ),
+      _PermDef(
+        icon:        Icons.layers_rounded,
+        color:       AppColors.danger,
+        title:       'Overlay (Draw Over Apps)',
+        why:         'Shows a red warning banner on top of WhatsApp, during scam calls, and when you receive a fraud SMS — even if AI Security is closed.',
+        isGranted:   health.overlayGranted,
+        type:        _PermType.notificationListener,
+        onEnable:    () => _showGuideSheet(
+          context, ref,
+          title:   'Enable Overlay Permission',
+          steps:   const [
+            'Tap  Open Settings  below.',
+            'Find  "AI Security"  in the list.',
+            'Turn ON  "Allow display over other apps".',
+            'Press back — overlays are now active!',
+          ],
+          onOpen: () => notifier.requestOverlay(),
+        ),
+      ),
     ];
 
     return ListView(
@@ -161,7 +181,7 @@ class _Body extends ConsumerWidget {
           Spacing.md, Spacing.sm, Spacing.md, 100),
       children: [
         // ── Progress header ────────────────────────────────────────────────
-        _ProgressHeader(granted: granted, total: 5, isDark: isDark),
+        _ProgressHeader(granted: granted, total: 6, isDark: isDark),
         const SizedBox(height: Spacing.lg),
 
         // ── Permission tiles ───────────────────────────────────────────────
